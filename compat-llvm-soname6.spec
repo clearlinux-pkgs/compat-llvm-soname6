@@ -6,7 +6,7 @@
 #
 Name     : compat-llvm-soname6
 Version  : 6.0.1
-Release  : 1
+Release  : 2
 URL      : http://releases.llvm.org/6.0.1/llvm-6.0.1.src.tar.xz
 Source0  : http://releases.llvm.org/6.0.1/llvm-6.0.1.src.tar.xz
 Source1  : http://releases.llvm.org/6.0.1/cfe-6.0.1.src.tar.xz
@@ -22,20 +22,30 @@ Requires: compat-llvm-soname6-lib
 Requires: compat-llvm-soname6-data
 Requires: compat-llvm-soname6-license
 Requires: compat-llvm-soname6-man
+BuildRequires : Sphinx
+BuildRequires : Z3-dev
+BuildRequires : binutils-dev
 BuildRequires : buildreq-cmake
 BuildRequires : buildreq-distutils3
 BuildRequires : buildreq-golang
 BuildRequires : cmake
 BuildRequires : doxygen
+BuildRequires : elfutils-dev
 BuildRequires : glibc-dev
+BuildRequires : googletest-dev
+BuildRequires : libffi-dev
+BuildRequires : libstdc++-dev
 BuildRequires : libxml2-dev
 BuildRequires : llvm-dev
+BuildRequires : ncurses-dev
 BuildRequires : perl
 BuildRequires : pkg-config
 BuildRequires : pkgconfig(libffi)
 BuildRequires : protobuf-dev
 BuildRequires : python3-dev
 BuildRequires : subversion
+BuildRequires : valgrind-dev
+BuildRequires : zlib-dev
 
 %description
 These inputs were pre-generated to allow for easier testing of llvm-cov.
@@ -123,7 +133,7 @@ export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C
-export SOURCE_DATE_EPOCH=1537373366
+export SOURCE_DATE_EPOCH=1537486226
 unset LD_AS_NEEDED
 mkdir -p clr-build
 pushd clr-build
@@ -134,12 +144,12 @@ export CFLAGS="-O2 -g -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --p
 export CXXFLAGS=$CFLAGS
 unset LDFLAGS
 unset LDFLAGS
-%cmake ..
+%cmake .. -DLLVM_ENABLE_ZLIB:BOOL=ON -DLLVM_LIBDIR_SUFFIX=64 -DLLVM_BINUTILS_INCDIR=/usr/include -DLLVM_TARGETS_TO_BUILD="X86;BPF;AMDGPU;NVPTX" -DLLVM_INSTALL_UTILS=ON -DLLVM_ENABLE_CXX1Y=ON -DC_INCLUDE_DIRS="/usr/include/c++:/usr/include/c++/x86_64-generic-linux:/usr/include"
 make  %{?_smp_mflags}
 popd
 
 %install
-export SOURCE_DATE_EPOCH=1537373366
+export SOURCE_DATE_EPOCH=1537486226
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/doc/compat-llvm-soname6
 cp LICENSE.TXT %{buildroot}/usr/share/doc/compat-llvm-soname6/LICENSE.TXT
@@ -161,13 +171,14 @@ popd
 
 %files
 %defattr(-,root,root,-)
-/usr/lib/clang/6.0.1/include/cuda_wrappers/algorithm
-/usr/lib/clang/6.0.1/include/cuda_wrappers/complex
-/usr/lib/clang/6.0.1/include/cuda_wrappers/new
-/usr/lib/clang/6.0.1/include/module.modulemap
+/usr/lib64/clang/6.0.1/include/cuda_wrappers/algorithm
+/usr/lib64/clang/6.0.1/include/cuda_wrappers/complex
+/usr/lib64/clang/6.0.1/include/cuda_wrappers/new
+/usr/lib64/clang/6.0.1/include/module.modulemap
 
 %files bin
 %defattr(-,root,root,-)
+%exclude /usr/bin/FileCheck
 %exclude /usr/bin/bugpoint
 %exclude /usr/bin/c-index-test
 %exclude /usr/bin/clang
@@ -189,6 +200,7 @@ popd
 %exclude /usr/bin/clang-reorder-fields
 %exclude /usr/bin/clang-tidy
 %exclude /usr/bin/clangd
+%exclude /usr/bin/count
 %exclude /usr/bin/find-all-symbols
 %exclude /usr/bin/git-clang-format
 %exclude /usr/bin/ld.lld
@@ -197,6 +209,8 @@ popd
 %exclude /usr/bin/lld
 %exclude /usr/bin/lld-link
 %exclude /usr/bin/lli
+%exclude /usr/bin/lli-child-target
+%exclude /usr/bin/llvm-PerfectShuffle
 %exclude /usr/bin/llvm-ar
 %exclude /usr/bin/llvm-as
 %exclude /usr/bin/llvm-bcanalyzer
@@ -242,6 +256,7 @@ popd
 %exclude /usr/bin/llvm-tblgen
 %exclude /usr/bin/llvm-xray
 %exclude /usr/bin/modularize
+%exclude /usr/bin/not
 %exclude /usr/bin/obj2yaml
 %exclude /usr/bin/opt
 %exclude /usr/bin/sancov
@@ -250,6 +265,7 @@ popd
 %exclude /usr/bin/scan-view
 %exclude /usr/bin/verify-uselistorder
 %exclude /usr/bin/wasm-ld
+%exclude /usr/bin/yaml-bench
 %exclude /usr/bin/yaml2obj
 %exclude /usr/libexec/c++-analyzer
 %exclude /usr/libexec/ccc-analyzer
@@ -1699,7 +1715,6 @@ popd
 %exclude /usr/include/llvm/ProfileData/SampleProf.h
 %exclude /usr/include/llvm/ProfileData/SampleProfReader.h
 %exclude /usr/include/llvm/ProfileData/SampleProfWriter.h
-%exclude /usr/include/llvm/Sup
 %exclude /usr/include/llvm/Support/AArch64TargetParser.def
 %exclude /usr/include/llvm/Support/AMDGPUKernelDescriptor.h
 %exclude /usr/include/llvm/Support/AMDGPUMetadata.h
@@ -2007,751 +2022,579 @@ popd
 %exclude /usr/include/llvm/XRay/Trace.h
 %exclude /usr/include/llvm/XRay/XRayRecord.h
 %exclude /usr/include/llvm/XRay/YAMLXRayRecord.h
-%exclude /usr/lib/BugpointPasses.so
-%exclude /usr/lib/LLVMHello.so
-%exclude /usr/lib/clang/6.0.1/include/__clang_cuda_builtin_vars.h
-%exclude /usr/lib/clang/6.0.1/include/__clang_cuda_cmath.h
-%exclude /usr/lib/clang/6.0.1/include/__clang_cuda_complex_builtins.h
-%exclude /usr/lib/clang/6.0.1/include/__clang_cuda_intrinsics.h
-%exclude /usr/lib/clang/6.0.1/include/__clang_cuda_math_forward_declares.h
-%exclude /usr/lib/clang/6.0.1/include/__clang_cuda_runtime_wrapper.h
-%exclude /usr/lib/clang/6.0.1/include/__stddef_max_align_t.h
-%exclude /usr/lib/clang/6.0.1/include/__wmmintrin_aes.h
-%exclude /usr/lib/clang/6.0.1/include/__wmmintrin_pclmul.h
-%exclude /usr/lib/clang/6.0.1/include/adxintrin.h
-%exclude /usr/lib/clang/6.0.1/include/altivec.h
-%exclude /usr/lib/clang/6.0.1/include/ammintrin.h
-%exclude /usr/lib/clang/6.0.1/include/arm64intr.h
-%exclude /usr/lib/clang/6.0.1/include/arm_acle.h
-%exclude /usr/lib/clang/6.0.1/include/arm_neon.h
-%exclude /usr/lib/clang/6.0.1/include/armintr.h
-%exclude /usr/lib/clang/6.0.1/include/avx2intrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512bitalgintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512bwintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512cdintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512dqintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512erintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512fintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512ifmaintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512ifmavlintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512pfintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vbmi2intrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vbmiintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vbmivlintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vlbitalgintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vlbwintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vlcdintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vldqintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vlintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vlvbmi2intrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vlvnniintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vnniintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vpopcntdqintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avx512vpopcntdqvlintrin.h
-%exclude /usr/lib/clang/6.0.1/include/avxintrin.h
-%exclude /usr/lib/clang/6.0.1/include/bmi2intrin.h
-%exclude /usr/lib/clang/6.0.1/include/bmiintrin.h
-%exclude /usr/lib/clang/6.0.1/include/cetintrin.h
-%exclude /usr/lib/clang/6.0.1/include/clflushoptintrin.h
-%exclude /usr/lib/clang/6.0.1/include/clwbintrin.h
-%exclude /usr/lib/clang/6.0.1/include/clzerointrin.h
-%exclude /usr/lib/clang/6.0.1/include/cpuid.h
-%exclude /usr/lib/clang/6.0.1/include/emmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/f16cintrin.h
-%exclude /usr/lib/clang/6.0.1/include/float.h
-%exclude /usr/lib/clang/6.0.1/include/fma4intrin.h
-%exclude /usr/lib/clang/6.0.1/include/fmaintrin.h
-%exclude /usr/lib/clang/6.0.1/include/fxsrintrin.h
-%exclude /usr/lib/clang/6.0.1/include/gfniintrin.h
-%exclude /usr/lib/clang/6.0.1/include/htmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/htmxlintrin.h
-%exclude /usr/lib/clang/6.0.1/include/ia32intrin.h
-%exclude /usr/lib/clang/6.0.1/include/immintrin.h
-%exclude /usr/lib/clang/6.0.1/include/intrin.h
-%exclude /usr/lib/clang/6.0.1/include/inttypes.h
-%exclude /usr/lib/clang/6.0.1/include/iso646.h
-%exclude /usr/lib/clang/6.0.1/include/limits.h
-%exclude /usr/lib/clang/6.0.1/include/lwpintrin.h
-%exclude /usr/lib/clang/6.0.1/include/lzcntintrin.h
-%exclude /usr/lib/clang/6.0.1/include/mm3dnow.h
-%exclude /usr/lib/clang/6.0.1/include/mm_malloc.h
-%exclude /usr/lib/clang/6.0.1/include/mmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/msa.h
-%exclude /usr/lib/clang/6.0.1/include/mwaitxintrin.h
-%exclude /usr/lib/clang/6.0.1/include/nmmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/omp.h
-%exclude /usr/lib/clang/6.0.1/include/ompt.h
-%exclude /usr/lib/clang/6.0.1/include/opencl-c.h
-%exclude /usr/lib/clang/6.0.1/include/pkuintrin.h
-%exclude /usr/lib/clang/6.0.1/include/pmmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/popcntintrin.h
-%exclude /usr/lib/clang/6.0.1/include/prfchwintrin.h
-%exclude /usr/lib/clang/6.0.1/include/rdseedintrin.h
-%exclude /usr/lib/clang/6.0.1/include/rtmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/s390intrin.h
-%exclude /usr/lib/clang/6.0.1/include/shaintrin.h
-%exclude /usr/lib/clang/6.0.1/include/smmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/stdalign.h
-%exclude /usr/lib/clang/6.0.1/include/stdarg.h
-%exclude /usr/lib/clang/6.0.1/include/stdatomic.h
-%exclude /usr/lib/clang/6.0.1/include/stdbool.h
-%exclude /usr/lib/clang/6.0.1/include/stddef.h
-%exclude /usr/lib/clang/6.0.1/include/stdint.h
-%exclude /usr/lib/clang/6.0.1/include/stdnoreturn.h
-%exclude /usr/lib/clang/6.0.1/include/tbmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/tgmath.h
-%exclude /usr/lib/clang/6.0.1/include/tmmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/unwind.h
-%exclude /usr/lib/clang/6.0.1/include/vadefs.h
-%exclude /usr/lib/clang/6.0.1/include/vaesintrin.h
-%exclude /usr/lib/clang/6.0.1/include/varargs.h
-%exclude /usr/lib/clang/6.0.1/include/vecintrin.h
-%exclude /usr/lib/clang/6.0.1/include/vpclmulqdqintrin.h
-%exclude /usr/lib/clang/6.0.1/include/wmmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/x86intrin.h
-%exclude /usr/lib/clang/6.0.1/include/xmmintrin.h
-%exclude /usr/lib/clang/6.0.1/include/xopintrin.h
-%exclude /usr/lib/clang/6.0.1/include/xsavecintrin.h
-%exclude /usr/lib/clang/6.0.1/include/xsaveintrin.h
-%exclude /usr/lib/clang/6.0.1/include/xsaveoptintrin.h
-%exclude /usr/lib/clang/6.0.1/include/xsavesintrin.h
-%exclude /usr/lib/clang/6.0.1/include/xtestintrin.h
-%exclude /usr/lib/cmake/clang/ClangConfig.cmake
-%exclude /usr/lib/cmake/clang/ClangTargets-relwithdebinfo.cmake
-%exclude /usr/lib/cmake/clang/ClangTargets.cmake
-%exclude /usr/lib/cmake/llvm/AddLLVM.cmake
-%exclude /usr/lib/cmake/llvm/AddLLVMDefinitions.cmake
-%exclude /usr/lib/cmake/llvm/AddOCaml.cmake
-%exclude /usr/lib/cmake/llvm/AddSphinxTarget.cmake
-%exclude /usr/lib/cmake/llvm/CheckAtomic.cmake
-%exclude /usr/lib/cmake/llvm/CheckCompilerVersion.cmake
-%exclude /usr/lib/cmake/llvm/CheckLinkerFlag.cmake
-%exclude /usr/lib/cmake/llvm/ChooseMSVCCRT.cmake
-%exclude /usr/lib/cmake/llvm/CrossCompile.cmake
-%exclude /usr/lib/cmake/llvm/DetermineGCCCompatible.cmake
-%exclude /usr/lib/cmake/llvm/FindOCaml.cmake
-%exclude /usr/lib/cmake/llvm/FindSphinx.cmake
-%exclude /usr/lib/cmake/llvm/GenerateVersionFromCVS.cmake
-%exclude /usr/lib/cmake/llvm/GetSVN.cmake
-%exclude /usr/lib/cmake/llvm/HandleLLVMOptions.cmake
-%exclude /usr/lib/cmake/llvm/HandleLLVMStdlib.cmake
-%exclude /usr/lib/cmake/llvm/LLVM-Config.cmake
-%exclude /usr/lib/cmake/llvm/LLVMConfig.cmake
-%exclude /usr/lib/cmake/llvm/LLVMConfigVersion.cmake
-%exclude /usr/lib/cmake/llvm/LLVMExports-relwithdebinfo.cmake
-%exclude /usr/lib/cmake/llvm/LLVMExports.cmake
-%exclude /usr/lib/cmake/llvm/LLVMExternalProjectUtils.cmake
-%exclude /usr/lib/cmake/llvm/LLVMInstallSymlink.cmake
-%exclude /usr/lib/cmake/llvm/LLVMProcessSources.cmake
-%exclude /usr/lib/cmake/llvm/TableGen.cmake
-%exclude /usr/lib/cmake/llvm/VersionFromVCS.cmake
-%exclude /usr/lib/libLLVMAArch64AsmParser.so
-%exclude /usr/lib/libLLVMAArch64AsmPrinter.so
-%exclude /usr/lib/libLLVMAArch64CodeGen.so
-%exclude /usr/lib/libLLVMAArch64Desc.so
-%exclude /usr/lib/libLLVMAArch64Disassembler.so
-%exclude /usr/lib/libLLVMAArch64Info.so
-%exclude /usr/lib/libLLVMAArch64Utils.so
-%exclude /usr/lib/libLLVMAMDGPUAsmParser.so
-%exclude /usr/lib/libLLVMAMDGPUAsmPrinter.so
-%exclude /usr/lib/libLLVMAMDGPUCodeGen.so
-%exclude /usr/lib/libLLVMAMDGPUDesc.so
-%exclude /usr/lib/libLLVMAMDGPUDisassembler.so
-%exclude /usr/lib/libLLVMAMDGPUInfo.so
-%exclude /usr/lib/libLLVMAMDGPUUtils.so
-%exclude /usr/lib/libLLVMARMAsmParser.so
-%exclude /usr/lib/libLLVMARMAsmPrinter.so
-%exclude /usr/lib/libLLVMARMCodeGen.so
-%exclude /usr/lib/libLLVMARMDesc.so
-%exclude /usr/lib/libLLVMARMDisassembler.so
-%exclude /usr/lib/libLLVMARMInfo.so
-%exclude /usr/lib/libLLVMARMUtils.so
-%exclude /usr/lib/libLLVMAnalysis.so
-%exclude /usr/lib/libLLVMAsmParser.so
-%exclude /usr/lib/libLLVMAsmPrinter.so
-%exclude /usr/lib/libLLVMBPFAsmParser.so
-%exclude /usr/lib/libLLVMBPFAsmPrinter.so
-%exclude /usr/lib/libLLVMBPFCodeGen.so
-%exclude /usr/lib/libLLVMBPFDesc.so
-%exclude /usr/lib/libLLVMBPFDisassembler.so
-%exclude /usr/lib/libLLVMBPFInfo.so
-%exclude /usr/lib/libLLVMBinaryFormat.so
-%exclude /usr/lib/libLLVMBitReader.so
-%exclude /usr/lib/libLLVMBitWriter.so
-%exclude /usr/lib/libLLVMCodeGen.so
-%exclude /usr/lib/libLLVMCore.so
-%exclude /usr/lib/libLLVMCoroutines.so
-%exclude /usr/lib/libLLVMCoverage.so
-%exclude /usr/lib/libLLVMDebugInfoCodeView.so
-%exclude /usr/lib/libLLVMDebugInfoDWARF.so
-%exclude /usr/lib/libLLVMDebugInfoMSF.so
-%exclude /usr/lib/libLLVMDebugInfoPDB.so
-%exclude /usr/lib/libLLVMDemangle.so
-%exclude /usr/lib/libLLVMDlltoolDriver.so
-%exclude /usr/lib/libLLVMExecutionEngine.so
-%exclude /usr/lib/libLLVMFuzzMutate.so
-%exclude /usr/lib/libLLVMGlobalISel.so
-%exclude /usr/lib/libLLVMHexagonAsmParser.so
-%exclude /usr/lib/libLLVMHexagonCodeGen.so
-%exclude /usr/lib/libLLVMHexagonDesc.so
-%exclude /usr/lib/libLLVMHexagonDisassembler.so
-%exclude /usr/lib/libLLVMHexagonInfo.so
-%exclude /usr/lib/libLLVMIRReader.so
-%exclude /usr/lib/libLLVMInstCombine.so
-%exclude /usr/lib/libLLVMInstrumentation.so
-%exclude /usr/lib/libLLVMInterpreter.so
-%exclude /usr/lib/libLLVMLTO.so
-%exclude /usr/lib/libLLVMLanaiAsmParser.so
-%exclude /usr/lib/libLLVMLanaiAsmPrinter.so
-%exclude /usr/lib/libLLVMLanaiCodeGen.so
-%exclude /usr/lib/libLLVMLanaiDesc.so
-%exclude /usr/lib/libLLVMLanaiDisassembler.so
-%exclude /usr/lib/libLLVMLanaiInfo.so
-%exclude /usr/lib/libLLVMLibDriver.so
-%exclude /usr/lib/libLLVMLineEditor.so
-%exclude /usr/lib/libLLVMLinker.so
-%exclude /usr/lib/libLLVMMC.so
-%exclude /usr/lib/libLLVMMCDisassembler.so
-%exclude /usr/lib/libLLVMMCJIT.so
-%exclude /usr/lib/libLLVMMCParser.so
-%exclude /usr/lib/libLLVMMIRParser.so
-%exclude /usr/lib/libLLVMMSP430AsmPrinter.so
-%exclude /usr/lib/libLLVMMSP430CodeGen.so
-%exclude /usr/lib/libLLVMMSP430Desc.so
-%exclude /usr/lib/libLLVMMSP430Info.so
-%exclude /usr/lib/libLLVMMipsAsmParser.so
-%exclude /usr/lib/libLLVMMipsAsmPrinter.so
-%exclude /usr/lib/libLLVMMipsCodeGen.so
-%exclude /usr/lib/libLLVMMipsDesc.so
-%exclude /usr/lib/libLLVMMipsDisassembler.so
-%exclude /usr/lib/libLLVMMipsInfo.so
-%exclude /usr/lib/libLLVMNVPTXAsmPrinter.so
-%exclude /usr/lib/libLLVMNVPTXCodeGen.so
-%exclude /usr/lib/libLLVMNVPTXDesc.so
-%exclude /usr/lib/libLLVMNVPTXInfo.so
-%exclude /usr/lib/libLLVMObjCARCOpts.so
-%exclude /usr/lib/libLLVMObject.so
-%exclude /usr/lib/libLLVMObjectYAML.so
-%exclude /usr/lib/libLLVMOption.so
-%exclude /usr/lib/libLLVMOrcJIT.so
-%exclude /usr/lib/libLLVMPasses.so
-%exclude /usr/lib/libLLVMPowerPCAsmParser.so
-%exclude /usr/lib/libLLVMPowerPCAsmPrinter.so
-%exclude /usr/lib/libLLVMPowerPCCodeGen.so
-%exclude /usr/lib/libLLVMPowerPCDesc.so
-%exclude /usr/lib/libLLVMPowerPCDisassembler.so
-%exclude /usr/lib/libLLVMPowerPCInfo.so
-%exclude /usr/lib/libLLVMProfileData.so
-%exclude /usr/lib/libLLVMRuntimeDyld.so
-%exclude /usr/lib/libLLVMScalarOpts.so
-%exclude /usr/lib/libLLVMSelectionDAG.so
-%exclude /usr/lib/libLLVMSparcAsmParser.so
-%exclude /usr/lib/libLLVMSparcAsmPrinter.so
-%exclude /usr/lib/libLLVMSparcCodeGen.so
-%exclude /usr/lib/libLLVMSparcDesc.so
-%exclude /usr/lib/libLLVMSparcDisassembler.so
-%exclude /usr/lib/libLLVMSparcInfo.so
-%exclude /usr/lib/libLLVMSupport.so
-%exclude /usr/lib/libLLVMSymbolize.so
-%exclude /usr/lib/libLLVMSystemZAsmParser.so
-%exclude /usr/lib/libLLVMSystemZAsmPrinter.so
-%exclude /usr/lib/libLLVMSystemZCodeGen.so
-%exclude /usr/lib/libLLVMSystemZDesc.so
-%exclude /usr/lib/libLLVMSystemZDisassembler.so
-%exclude /usr/lib/libLLVMSystemZInfo.so
-%exclude /usr/lib/libLLVMTableGen.so
-%exclude /usr/lib/libLLVMTarget.so
-%exclude /usr/lib/libLLVMTransformUtils.so
-%exclude /usr/lib/libLLVMVectorize.so
-%exclude /usr/lib/libLLVMWindowsManifest.so
-%exclude /usr/lib/libLLVMX86AsmParser.so
-%exclude /usr/lib/libLLVMX86AsmPrinter.so
-%exclude /usr/lib/libLLVMX86CodeGen.so
-%exclude /usr/lib/libLLVMX86Desc.so
-%exclude /usr/lib/libLLVMX86Disassembler.so
-%exclude /usr/lib/libLLVMX86Info.so
-%exclude /usr/lib/libLLVMX86Utils.so
-%exclude /usr/lib/libLLVMXCoreAsmPrinter.so
-%exclude /usr/lib/libLLVMXCoreCodeGen.so
-%exclude /usr/lib/libLLVMXCoreDesc.so
-%exclude /usr/lib/libLLVMXCoreDisassembler.so
-%exclude /usr/lib/libLLVMXCoreInfo.so
-%exclude /usr/lib/libLLVMXRay.so
-%exclude /usr/lib/libLLVMipo.so
-%exclude /usr/lib/libLTO.so
-%exclude /usr/lib/libclang.so
-%exclude /usr/lib/libclangARCMigrate.so
-%exclude /usr/lib/libclangAST.so
-%exclude /usr/lib/libclangASTMatchers.so
-%exclude /usr/lib/libclangAnalysis.so
-%exclude /usr/lib/libclangApplyReplacements.so
-%exclude /usr/lib/libclangBasic.so
-%exclude /usr/lib/libclangChangeNamespace.so
-%exclude /usr/lib/libclangCodeGen.so
-%exclude /usr/lib/libclangCrossTU.so
-%exclude /usr/lib/libclangDaemon.so
-%exclude /usr/lib/libclangDriver.so
-%exclude /usr/lib/libclangDynamicASTMatchers.so
-%exclude /usr/lib/libclangEdit.so
-%exclude /usr/lib/libclangFormat.so
-%exclude /usr/lib/libclangFrontend.so
-%exclude /usr/lib/libclangFrontendTool.so
-%exclude /usr/lib/libclangHandleCXX.so
-%exclude /usr/lib/libclangIncludeFixer.so
-%exclude /usr/lib/libclangIncludeFixerPlugin.so
-%exclude /usr/lib/libclangIndex.so
-%exclude /usr/lib/libclangLex.so
-%exclude /usr/lib/libclangMove.so
-%exclude /usr/lib/libclangParse.so
-%exclude /usr/lib/libclangQuery.so
-%exclude /usr/lib/libclangReorderFields.so
-%exclude /usr/lib/libclangRewrite.so
-%exclude /usr/lib/libclangRewriteFrontend.so
-%exclude /usr/lib/libclangSema.so
-%exclude /usr/lib/libclangSerialization.so
-%exclude /usr/lib/libclangStaticAnalyzerCheckers.so
-%exclude /usr/lib/libclangStaticAnalyzerCore.so
-%exclude /usr/lib/libclangStaticAnalyzerFrontend.so
-%exclude /usr/lib/libclangTidy.so
-%exclude /usr/lib/libclangTidyAndroidModule.so
-%exclude /usr/lib/libclangTidyBoostModule.so
-%exclude /usr/lib/libclangTidyBugproneModule.so
-%exclude /usr/lib/libclangTidyCERTModule.so
-%exclude /usr/lib/libclangTidyCppCoreGuidelinesModule.so
-%exclude /usr/lib/libclangTidyFuchsiaModule.so
-%exclude /usr/lib/libclangTidyGoogleModule.so
-%exclude /usr/lib/libclangTidyHICPPModule.so
-%exclude /usr/lib/libclangTidyLLVMModule.so
-%exclude /usr/lib/libclangTidyMPIModule.so
-%exclude /usr/lib/libclangTidyMiscModule.so
-%exclude /usr/lib/libclangTidyModernizeModule.so
-%exclude /usr/lib/libclangTidyObjCModule.so
-%exclude /usr/lib/libclangTidyPerformanceModule.so
-%exclude /usr/lib/libclangTidyPlugin.so
-%exclude /usr/lib/libclangTidyReadabilityModule.so
-%exclude /usr/lib/libclangTidyUtils.so
-%exclude /usr/lib/libclangTooling.so
-%exclude /usr/lib/libclangToolingASTDiff.so
-%exclude /usr/lib/libclangToolingCore.so
-%exclude /usr/lib/libclangToolingRefactor.so
-%exclude /usr/lib/libfindAllSymbols.so
-%exclude /usr/lib/libgomp.so
-%exclude /usr/lib/libiomp5.so
-%exclude /usr/lib/liblldCOFF.so
-%exclude /usr/lib/liblldCommon.so
-%exclude /usr/lib/liblldCore.so
-%exclude /usr/lib/liblldDriver.so
-%exclude /usr/lib/liblldELF.so
-%exclude /usr/lib/liblldMachO.so
-%exclude /usr/lib/liblldMinGW.so
-%exclude /usr/lib/liblldReaderWriter.so
-%exclude /usr/lib/liblldWasm.so
-%exclude /usr/lib/liblldYAML.so
-%exclude /usr/lib/libomp.so
-%exclude /usr/lib/libomptarget.so
+%exclude /usr/lib64/BugpointPasses.so
+%exclude /usr/lib64/LLVMHello.so
+%exclude /usr/lib64/LLVMgold.so
+%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_builtin_vars.h
+%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_cmath.h
+%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_complex_builtins.h
+%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_intrinsics.h
+%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_math_forward_declares.h
+%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_runtime_wrapper.h
+%exclude /usr/lib64/clang/6.0.1/include/__stddef_max_align_t.h
+%exclude /usr/lib64/clang/6.0.1/include/__wmmintrin_aes.h
+%exclude /usr/lib64/clang/6.0.1/include/__wmmintrin_pclmul.h
+%exclude /usr/lib64/clang/6.0.1/include/adxintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/altivec.h
+%exclude /usr/lib64/clang/6.0.1/include/ammintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/arm64intr.h
+%exclude /usr/lib64/clang/6.0.1/include/arm_acle.h
+%exclude /usr/lib64/clang/6.0.1/include/arm_neon.h
+%exclude /usr/lib64/clang/6.0.1/include/armintr.h
+%exclude /usr/lib64/clang/6.0.1/include/avx2intrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512bitalgintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512bwintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512cdintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512dqintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512erintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512fintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512ifmaintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512ifmavlintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512pfintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vbmi2intrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vbmiintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vbmivlintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vlbitalgintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vlbwintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vlcdintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vldqintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vlintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vlvbmi2intrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vlvnniintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vnniintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vpopcntdqintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avx512vpopcntdqvlintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/avxintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/bmi2intrin.h
+%exclude /usr/lib64/clang/6.0.1/include/bmiintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/cetintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/clflushoptintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/clwbintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/clzerointrin.h
+%exclude /usr/lib64/clang/6.0.1/include/cpuid.h
+%exclude /usr/lib64/clang/6.0.1/include/emmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/f16cintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/float.h
+%exclude /usr/lib64/clang/6.0.1/include/fma4intrin.h
+%exclude /usr/lib64/clang/6.0.1/include/fmaintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/fxsrintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/gfniintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/htmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/htmxlintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/ia32intrin.h
+%exclude /usr/lib64/clang/6.0.1/include/immintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/intrin.h
+%exclude /usr/lib64/clang/6.0.1/include/inttypes.h
+%exclude /usr/lib64/clang/6.0.1/include/iso646.h
+%exclude /usr/lib64/clang/6.0.1/include/limits.h
+%exclude /usr/lib64/clang/6.0.1/include/lwpintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/lzcntintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/mm3dnow.h
+%exclude /usr/lib64/clang/6.0.1/include/mm_malloc.h
+%exclude /usr/lib64/clang/6.0.1/include/mmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/msa.h
+%exclude /usr/lib64/clang/6.0.1/include/mwaitxintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/nmmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/omp.h
+%exclude /usr/lib64/clang/6.0.1/include/ompt.h
+%exclude /usr/lib64/clang/6.0.1/include/opencl-c.h
+%exclude /usr/lib64/clang/6.0.1/include/pkuintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/pmmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/popcntintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/prfchwintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/rdseedintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/rtmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/s390intrin.h
+%exclude /usr/lib64/clang/6.0.1/include/shaintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/smmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/stdalign.h
+%exclude /usr/lib64/clang/6.0.1/include/stdarg.h
+%exclude /usr/lib64/clang/6.0.1/include/stdatomic.h
+%exclude /usr/lib64/clang/6.0.1/include/stdbool.h
+%exclude /usr/lib64/clang/6.0.1/include/stddef.h
+%exclude /usr/lib64/clang/6.0.1/include/stdint.h
+%exclude /usr/lib64/clang/6.0.1/include/stdnoreturn.h
+%exclude /usr/lib64/clang/6.0.1/include/tbmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/tgmath.h
+%exclude /usr/lib64/clang/6.0.1/include/tmmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/unwind.h
+%exclude /usr/lib64/clang/6.0.1/include/vadefs.h
+%exclude /usr/lib64/clang/6.0.1/include/vaesintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/varargs.h
+%exclude /usr/lib64/clang/6.0.1/include/vecintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/vpclmulqdqintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/wmmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/x86intrin.h
+%exclude /usr/lib64/clang/6.0.1/include/xmmintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/xopintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/xsavecintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/xsaveintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/xsaveoptintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/xsavesintrin.h
+%exclude /usr/lib64/clang/6.0.1/include/xtestintrin.h
+%exclude /usr/lib64/cmake/clang/ClangConfig.cmake
+%exclude /usr/lib64/cmake/clang/ClangTargets-relwithdebinfo.cmake
+%exclude /usr/lib64/cmake/clang/ClangTargets.cmake
+%exclude /usr/lib64/cmake/llvm/AddLLVM.cmake
+%exclude /usr/lib64/cmake/llvm/AddLLVMDefinitions.cmake
+%exclude /usr/lib64/cmake/llvm/AddOCaml.cmake
+%exclude /usr/lib64/cmake/llvm/AddSphinxTarget.cmake
+%exclude /usr/lib64/cmake/llvm/CheckAtomic.cmake
+%exclude /usr/lib64/cmake/llvm/CheckCompilerVersion.cmake
+%exclude /usr/lib64/cmake/llvm/CheckLinkerFlag.cmake
+%exclude /usr/lib64/cmake/llvm/ChooseMSVCCRT.cmake
+%exclude /usr/lib64/cmake/llvm/CrossCompile.cmake
+%exclude /usr/lib64/cmake/llvm/DetermineGCCCompatible.cmake
+%exclude /usr/lib64/cmake/llvm/FindOCaml.cmake
+%exclude /usr/lib64/cmake/llvm/FindSphinx.cmake
+%exclude /usr/lib64/cmake/llvm/GenerateVersionFromCVS.cmake
+%exclude /usr/lib64/cmake/llvm/GetSVN.cmake
+%exclude /usr/lib64/cmake/llvm/HandleLLVMOptions.cmake
+%exclude /usr/lib64/cmake/llvm/HandleLLVMStdlib.cmake
+%exclude /usr/lib64/cmake/llvm/LLVM-Config.cmake
+%exclude /usr/lib64/cmake/llvm/LLVMConfig.cmake
+%exclude /usr/lib64/cmake/llvm/LLVMConfigVersion.cmake
+%exclude /usr/lib64/cmake/llvm/LLVMExports-relwithdebinfo.cmake
+%exclude /usr/lib64/cmake/llvm/LLVMExports.cmake
+%exclude /usr/lib64/cmake/llvm/LLVMExternalProjectUtils.cmake
+%exclude /usr/lib64/cmake/llvm/LLVMInstallSymlink.cmake
+%exclude /usr/lib64/cmake/llvm/LLVMProcessSources.cmake
+%exclude /usr/lib64/cmake/llvm/TableGen.cmake
+%exclude /usr/lib64/cmake/llvm/VersionFromVCS.cmake
+%exclude /usr/lib64/libLLVMAMDGPUAsmParser.so
+%exclude /usr/lib64/libLLVMAMDGPUAsmPrinter.so
+%exclude /usr/lib64/libLLVMAMDGPUCodeGen.so
+%exclude /usr/lib64/libLLVMAMDGPUDesc.so
+%exclude /usr/lib64/libLLVMAMDGPUDisassembler.so
+%exclude /usr/lib64/libLLVMAMDGPUInfo.so
+%exclude /usr/lib64/libLLVMAMDGPUUtils.so
+%exclude /usr/lib64/libLLVMAnalysis.so
+%exclude /usr/lib64/libLLVMAsmParser.so
+%exclude /usr/lib64/libLLVMAsmPrinter.so
+%exclude /usr/lib64/libLLVMBPFAsmParser.so
+%exclude /usr/lib64/libLLVMBPFAsmPrinter.so
+%exclude /usr/lib64/libLLVMBPFCodeGen.so
+%exclude /usr/lib64/libLLVMBPFDesc.so
+%exclude /usr/lib64/libLLVMBPFDisassembler.so
+%exclude /usr/lib64/libLLVMBPFInfo.so
+%exclude /usr/lib64/libLLVMBinaryFormat.so
+%exclude /usr/lib64/libLLVMBitReader.so
+%exclude /usr/lib64/libLLVMBitWriter.so
+%exclude /usr/lib64/libLLVMCodeGen.so
+%exclude /usr/lib64/libLLVMCore.so
+%exclude /usr/lib64/libLLVMCoroutines.so
+%exclude /usr/lib64/libLLVMCoverage.so
+%exclude /usr/lib64/libLLVMDebugInfoCodeView.so
+%exclude /usr/lib64/libLLVMDebugInfoDWARF.so
+%exclude /usr/lib64/libLLVMDebugInfoMSF.so
+%exclude /usr/lib64/libLLVMDebugInfoPDB.so
+%exclude /usr/lib64/libLLVMDemangle.so
+%exclude /usr/lib64/libLLVMDlltoolDriver.so
+%exclude /usr/lib64/libLLVMExecutionEngine.so
+%exclude /usr/lib64/libLLVMFuzzMutate.so
+%exclude /usr/lib64/libLLVMGlobalISel.so
+%exclude /usr/lib64/libLLVMIRReader.so
+%exclude /usr/lib64/libLLVMInstCombine.so
+%exclude /usr/lib64/libLLVMInstrumentation.so
+%exclude /usr/lib64/libLLVMInterpreter.so
+%exclude /usr/lib64/libLLVMLTO.so
+%exclude /usr/lib64/libLLVMLibDriver.so
+%exclude /usr/lib64/libLLVMLineEditor.so
+%exclude /usr/lib64/libLLVMLinker.so
+%exclude /usr/lib64/libLLVMMC.so
+%exclude /usr/lib64/libLLVMMCDisassembler.so
+%exclude /usr/lib64/libLLVMMCJIT.so
+%exclude /usr/lib64/libLLVMMCParser.so
+%exclude /usr/lib64/libLLVMMIRParser.so
+%exclude /usr/lib64/libLLVMNVPTXAsmPrinter.so
+%exclude /usr/lib64/libLLVMNVPTXCodeGen.so
+%exclude /usr/lib64/libLLVMNVPTXDesc.so
+%exclude /usr/lib64/libLLVMNVPTXInfo.so
+%exclude /usr/lib64/libLLVMObjCARCOpts.so
+%exclude /usr/lib64/libLLVMObject.so
+%exclude /usr/lib64/libLLVMObjectYAML.so
+%exclude /usr/lib64/libLLVMOption.so
+%exclude /usr/lib64/libLLVMOrcJIT.so
+%exclude /usr/lib64/libLLVMPasses.so
+%exclude /usr/lib64/libLLVMProfileData.so
+%exclude /usr/lib64/libLLVMRuntimeDyld.so
+%exclude /usr/lib64/libLLVMScalarOpts.so
+%exclude /usr/lib64/libLLVMSelectionDAG.so
+%exclude /usr/lib64/libLLVMSupport.so
+%exclude /usr/lib64/libLLVMSymbolize.so
+%exclude /usr/lib64/libLLVMTableGen.so
+%exclude /usr/lib64/libLLVMTarget.so
+%exclude /usr/lib64/libLLVMTransformUtils.so
+%exclude /usr/lib64/libLLVMVectorize.so
+%exclude /usr/lib64/libLLVMWindowsManifest.so
+%exclude /usr/lib64/libLLVMX86AsmParser.so
+%exclude /usr/lib64/libLLVMX86AsmPrinter.so
+%exclude /usr/lib64/libLLVMX86CodeGen.so
+%exclude /usr/lib64/libLLVMX86Desc.so
+%exclude /usr/lib64/libLLVMX86Disassembler.so
+%exclude /usr/lib64/libLLVMX86Info.so
+%exclude /usr/lib64/libLLVMX86Utils.so
+%exclude /usr/lib64/libLLVMXRay.so
+%exclude /usr/lib64/libLLVMipo.so
+%exclude /usr/lib64/libLTO.so
+%exclude /usr/lib64/libclang.so
+%exclude /usr/lib64/libclangARCMigrate.so
+%exclude /usr/lib64/libclangAST.so
+%exclude /usr/lib64/libclangASTMatchers.so
+%exclude /usr/lib64/libclangAnalysis.so
+%exclude /usr/lib64/libclangApplyReplacements.so
+%exclude /usr/lib64/libclangBasic.so
+%exclude /usr/lib64/libclangChangeNamespace.so
+%exclude /usr/lib64/libclangCodeGen.so
+%exclude /usr/lib64/libclangCrossTU.so
+%exclude /usr/lib64/libclangDaemon.so
+%exclude /usr/lib64/libclangDriver.so
+%exclude /usr/lib64/libclangDynamicASTMatchers.so
+%exclude /usr/lib64/libclangEdit.so
+%exclude /usr/lib64/libclangFormat.so
+%exclude /usr/lib64/libclangFrontend.so
+%exclude /usr/lib64/libclangFrontendTool.so
+%exclude /usr/lib64/libclangHandleCXX.so
+%exclude /usr/lib64/libclangIncludeFixer.so
+%exclude /usr/lib64/libclangIncludeFixerPlugin.so
+%exclude /usr/lib64/libclangIndex.so
+%exclude /usr/lib64/libclangLex.so
+%exclude /usr/lib64/libclangMove.so
+%exclude /usr/lib64/libclangParse.so
+%exclude /usr/lib64/libclangQuery.so
+%exclude /usr/lib64/libclangReorderFields.so
+%exclude /usr/lib64/libclangRewrite.so
+%exclude /usr/lib64/libclangRewriteFrontend.so
+%exclude /usr/lib64/libclangSema.so
+%exclude /usr/lib64/libclangSerialization.so
+%exclude /usr/lib64/libclangStaticAnalyzerCheckers.so
+%exclude /usr/lib64/libclangStaticAnalyzerCore.so
+%exclude /usr/lib64/libclangStaticAnalyzerFrontend.so
+%exclude /usr/lib64/libclangTidy.so
+%exclude /usr/lib64/libclangTidyAndroidModule.so
+%exclude /usr/lib64/libclangTidyBoostModule.so
+%exclude /usr/lib64/libclangTidyBugproneModule.so
+%exclude /usr/lib64/libclangTidyCERTModule.so
+%exclude /usr/lib64/libclangTidyCppCoreGuidelinesModule.so
+%exclude /usr/lib64/libclangTidyFuchsiaModule.so
+%exclude /usr/lib64/libclangTidyGoogleModule.so
+%exclude /usr/lib64/libclangTidyHICPPModule.so
+%exclude /usr/lib64/libclangTidyLLVMModule.so
+%exclude /usr/lib64/libclangTidyMPIModule.so
+%exclude /usr/lib64/libclangTidyMiscModule.so
+%exclude /usr/lib64/libclangTidyModernizeModule.so
+%exclude /usr/lib64/libclangTidyObjCModule.so
+%exclude /usr/lib64/libclangTidyPerformanceModule.so
+%exclude /usr/lib64/libclangTidyPlugin.so
+%exclude /usr/lib64/libclangTidyReadabilityModule.so
+%exclude /usr/lib64/libclangTidyUtils.so
+%exclude /usr/lib64/libclangTooling.so
+%exclude /usr/lib64/libclangToolingASTDiff.so
+%exclude /usr/lib64/libclangToolingCore.so
+%exclude /usr/lib64/libclangToolingRefactor.so
+%exclude /usr/lib64/libfindAllSymbols.so
+%exclude /usr/lib64/libgomp.so
+%exclude /usr/lib64/libiomp5.so
+%exclude /usr/lib64/liblldCOFF.so
+%exclude /usr/lib64/liblldCommon.so
+%exclude /usr/lib64/liblldCore.so
+%exclude /usr/lib64/liblldDriver.so
+%exclude /usr/lib64/liblldELF.so
+%exclude /usr/lib64/liblldMachO.so
+%exclude /usr/lib64/liblldMinGW.so
+%exclude /usr/lib64/liblldReaderWriter.so
+%exclude /usr/lib64/liblldWasm.so
+%exclude /usr/lib64/liblldYAML.so
+%exclude /usr/lib64/libomp.so
+%exclude /usr/lib64/libomptarget.rtl.x86_64.so
+%exclude /usr/lib64/libomptarget.so
 
 %files lib
 %defattr(-,root,root,-)
-/usr/lib/libLLVMAArch64AsmParser.so.6
-/usr/lib/libLLVMAArch64AsmParser.so.6.0.1
-/usr/lib/libLLVMAArch64AsmPrinter.so.6
-/usr/lib/libLLVMAArch64AsmPrinter.so.6.0.1
-/usr/lib/libLLVMAArch64CodeGen.so.6
-/usr/lib/libLLVMAArch64CodeGen.so.6.0.1
-/usr/lib/libLLVMAArch64Desc.so.6
-/usr/lib/libLLVMAArch64Desc.so.6.0.1
-/usr/lib/libLLVMAArch64Disassembler.so.6
-/usr/lib/libLLVMAArch64Disassembler.so.6.0.1
-/usr/lib/libLLVMAArch64Info.so.6
-/usr/lib/libLLVMAArch64Info.so.6.0.1
-/usr/lib/libLLVMAArch64Utils.so.6
-/usr/lib/libLLVMAArch64Utils.so.6.0.1
-/usr/lib/libLLVMAMDGPUAsmParser.so.6
-/usr/lib/libLLVMAMDGPUAsmParser.so.6.0.1
-/usr/lib/libLLVMAMDGPUAsmPrinter.so.6
-/usr/lib/libLLVMAMDGPUAsmPrinter.so.6.0.1
-/usr/lib/libLLVMAMDGPUCodeGen.so.6
-/usr/lib/libLLVMAMDGPUCodeGen.so.6.0.1
-/usr/lib/libLLVMAMDGPUDesc.so.6
-/usr/lib/libLLVMAMDGPUDesc.so.6.0.1
-/usr/lib/libLLVMAMDGPUDisassembler.so.6
-/usr/lib/libLLVMAMDGPUDisassembler.so.6.0.1
-/usr/lib/libLLVMAMDGPUInfo.so.6
-/usr/lib/libLLVMAMDGPUInfo.so.6.0.1
-/usr/lib/libLLVMAMDGPUUtils.so.6
-/usr/lib/libLLVMAMDGPUUtils.so.6.0.1
-/usr/lib/libLLVMARMAsmParser.so.6
-/usr/lib/libLLVMARMAsmParser.so.6.0.1
-/usr/lib/libLLVMARMAsmPrinter.so.6
-/usr/lib/libLLVMARMAsmPrinter.so.6.0.1
-/usr/lib/libLLVMARMCodeGen.so.6
-/usr/lib/libLLVMARMCodeGen.so.6.0.1
-/usr/lib/libLLVMARMDesc.so.6
-/usr/lib/libLLVMARMDesc.so.6.0.1
-/usr/lib/libLLVMARMDisassembler.so.6
-/usr/lib/libLLVMARMDisassembler.so.6.0.1
-/usr/lib/libLLVMARMInfo.so.6
-/usr/lib/libLLVMARMInfo.so.6.0.1
-/usr/lib/libLLVMARMUtils.so.6
-/usr/lib/libLLVMARMUtils.so.6.0.1
-/usr/lib/libLLVMAnalysis.so.6
-/usr/lib/libLLVMAnalysis.so.6.0.1
-/usr/lib/libLLVMAsmParser.so.6
-/usr/lib/libLLVMAsmParser.so.6.0.1
-/usr/lib/libLLVMAsmPrinter.so.6
-/usr/lib/libLLVMAsmPrinter.so.6.0.1
-/usr/lib/libLLVMBPFAsmParser.so.6
-/usr/lib/libLLVMBPFAsmParser.so.6.0.1
-/usr/lib/libLLVMBPFAsmPrinter.so.6
-/usr/lib/libLLVMBPFAsmPrinter.so.6.0.1
-/usr/lib/libLLVMBPFCodeGen.so.6
-/usr/lib/libLLVMBPFCodeGen.so.6.0.1
-/usr/lib/libLLVMBPFDesc.so.6
-/usr/lib/libLLVMBPFDesc.so.6.0.1
-/usr/lib/libLLVMBPFDisassembler.so.6
-/usr/lib/libLLVMBPFDisassembler.so.6.0.1
-/usr/lib/libLLVMBPFInfo.so.6
-/usr/lib/libLLVMBPFInfo.so.6.0.1
-/usr/lib/libLLVMBinaryFormat.so.6
-/usr/lib/libLLVMBinaryFormat.so.6.0.1
-/usr/lib/libLLVMBitReader.so.6
-/usr/lib/libLLVMBitReader.so.6.0.1
-/usr/lib/libLLVMBitWriter.so.6
-/usr/lib/libLLVMBitWriter.so.6.0.1
-/usr/lib/libLLVMCodeGen.so.6
-/usr/lib/libLLVMCodeGen.so.6.0.1
-/usr/lib/libLLVMCore.so.6
-/usr/lib/libLLVMCore.so.6.0.1
-/usr/lib/libLLVMCoroutines.so.6
-/usr/lib/libLLVMCoroutines.so.6.0.1
-/usr/lib/libLLVMCoverage.so.6
-/usr/lib/libLLVMCoverage.so.6.0.1
-/usr/lib/libLLVMDebugInfoCodeView.so.6
-/usr/lib/libLLVMDebugInfoCodeView.so.6.0.1
-/usr/lib/libLLVMDebugInfoDWARF.so.6
-/usr/lib/libLLVMDebugInfoDWARF.so.6.0.1
-/usr/lib/libLLVMDebugInfoMSF.so.6
-/usr/lib/libLLVMDebugInfoMSF.so.6.0.1
-/usr/lib/libLLVMDebugInfoPDB.so.6
-/usr/lib/libLLVMDebugInfoPDB.so.6.0.1
-/usr/lib/libLLVMDemangle.so.6
-/usr/lib/libLLVMDemangle.so.6.0.1
-/usr/lib/libLLVMDlltoolDriver.so.6
-/usr/lib/libLLVMDlltoolDriver.so.6.0.1
-/usr/lib/libLLVMExecutionEngine.so.6
-/usr/lib/libLLVMExecutionEngine.so.6.0.1
-/usr/lib/libLLVMFuzzMutate.so.6
-/usr/lib/libLLVMFuzzMutate.so.6.0.1
-/usr/lib/libLLVMGlobalISel.so.6
-/usr/lib/libLLVMGlobalISel.so.6.0.1
-/usr/lib/libLLVMHexagonAsmParser.so.6
-/usr/lib/libLLVMHexagonAsmParser.so.6.0.1
-/usr/lib/libLLVMHexagonCodeGen.so.6
-/usr/lib/libLLVMHexagonCodeGen.so.6.0.1
-/usr/lib/libLLVMHexagonDesc.so.6
-/usr/lib/libLLVMHexagonDesc.so.6.0.1
-/usr/lib/libLLVMHexagonDisassembler.so.6
-/usr/lib/libLLVMHexagonDisassembler.so.6.0.1
-/usr/lib/libLLVMHexagonInfo.so.6
-/usr/lib/libLLVMHexagonInfo.so.6.0.1
-/usr/lib/libLLVMIRReader.so.6
-/usr/lib/libLLVMIRReader.so.6.0.1
-/usr/lib/libLLVMInstCombine.so.6
-/usr/lib/libLLVMInstCombine.so.6.0.1
-/usr/lib/libLLVMInstrumentation.so.6
-/usr/lib/libLLVMInstrumentation.so.6.0.1
-/usr/lib/libLLVMInterpreter.so.6
-/usr/lib/libLLVMInterpreter.so.6.0.1
-/usr/lib/libLLVMLTO.so.6
-/usr/lib/libLLVMLTO.so.6.0.1
-/usr/lib/libLLVMLanaiAsmParser.so.6
-/usr/lib/libLLVMLanaiAsmParser.so.6.0.1
-/usr/lib/libLLVMLanaiAsmPrinter.so.6
-/usr/lib/libLLVMLanaiAsmPrinter.so.6.0.1
-/usr/lib/libLLVMLanaiCodeGen.so.6
-/usr/lib/libLLVMLanaiCodeGen.so.6.0.1
-/usr/lib/libLLVMLanaiDesc.so.6
-/usr/lib/libLLVMLanaiDesc.so.6.0.1
-/usr/lib/libLLVMLanaiDisassembler.so.6
-/usr/lib/libLLVMLanaiDisassembler.so.6.0.1
-/usr/lib/libLLVMLanaiInfo.so.6
-/usr/lib/libLLVMLanaiInfo.so.6.0.1
-/usr/lib/libLLVMLibDriver.so.6
-/usr/lib/libLLVMLibDriver.so.6.0.1
-/usr/lib/libLLVMLineEditor.so.6
-/usr/lib/libLLVMLineEditor.so.6.0.1
-/usr/lib/libLLVMLinker.so.6
-/usr/lib/libLLVMLinker.so.6.0.1
-/usr/lib/libLLVMMC.so.6
-/usr/lib/libLLVMMC.so.6.0.1
-/usr/lib/libLLVMMCDisassembler.so.6
-/usr/lib/libLLVMMCDisassembler.so.6.0.1
-/usr/lib/libLLVMMCJIT.so.6
-/usr/lib/libLLVMMCJIT.so.6.0.1
-/usr/lib/libLLVMMCParser.so.6
-/usr/lib/libLLVMMCParser.so.6.0.1
-/usr/lib/libLLVMMIRParser.so.6
-/usr/lib/libLLVMMIRParser.so.6.0.1
-/usr/lib/libLLVMMSP430AsmPrinter.so.6
-/usr/lib/libLLVMMSP430AsmPrinter.so.6.0.1
-/usr/lib/libLLVMMSP430CodeGen.so.6
-/usr/lib/libLLVMMSP430CodeGen.so.6.0.1
-/usr/lib/libLLVMMSP430Desc.so.6
-/usr/lib/libLLVMMSP430Desc.so.6.0.1
-/usr/lib/libLLVMMSP430Info.so.6
-/usr/lib/libLLVMMSP430Info.so.6.0.1
-/usr/lib/libLLVMMipsAsmParser.so.6
-/usr/lib/libLLVMMipsAsmParser.so.6.0.1
-/usr/lib/libLLVMMipsAsmPrinter.so.6
-/usr/lib/libLLVMMipsAsmPrinter.so.6.0.1
-/usr/lib/libLLVMMipsCodeGen.so.6
-/usr/lib/libLLVMMipsCodeGen.so.6.0.1
-/usr/lib/libLLVMMipsDesc.so.6
-/usr/lib/libLLVMMipsDesc.so.6.0.1
-/usr/lib/libLLVMMipsDisassembler.so.6
-/usr/lib/libLLVMMipsDisassembler.so.6.0.1
-/usr/lib/libLLVMMipsInfo.so.6
-/usr/lib/libLLVMMipsInfo.so.6.0.1
-/usr/lib/libLLVMNVPTXAsmPrinter.so.6
-/usr/lib/libLLVMNVPTXAsmPrinter.so.6.0.1
-/usr/lib/libLLVMNVPTXCodeGen.so.6
-/usr/lib/libLLVMNVPTXCodeGen.so.6.0.1
-/usr/lib/libLLVMNVPTXDesc.so.6
-/usr/lib/libLLVMNVPTXDesc.so.6.0.1
-/usr/lib/libLLVMNVPTXInfo.so.6
-/usr/lib/libLLVMNVPTXInfo.so.6.0.1
-/usr/lib/libLLVMObjCARCOpts.so.6
-/usr/lib/libLLVMObjCARCOpts.so.6.0.1
-/usr/lib/libLLVMObject.so.6
-/usr/lib/libLLVMObject.so.6.0.1
-/usr/lib/libLLVMObjectYAML.so.6
-/usr/lib/libLLVMObjectYAML.so.6.0.1
-/usr/lib/libLLVMOption.so.6
-/usr/lib/libLLVMOption.so.6.0.1
-/usr/lib/libLLVMOrcJIT.so.6
-/usr/lib/libLLVMOrcJIT.so.6.0.1
-/usr/lib/libLLVMPasses.so.6
-/usr/lib/libLLVMPasses.so.6.0.1
-/usr/lib/libLLVMPowerPCAsmParser.so.6
-/usr/lib/libLLVMPowerPCAsmParser.so.6.0.1
-/usr/lib/libLLVMPowerPCAsmPrinter.so.6
-/usr/lib/libLLVMPowerPCAsmPrinter.so.6.0.1
-/usr/lib/libLLVMPowerPCCodeGen.so.6
-/usr/lib/libLLVMPowerPCCodeGen.so.6.0.1
-/usr/lib/libLLVMPowerPCDesc.so.6
-/usr/lib/libLLVMPowerPCDesc.so.6.0.1
-/usr/lib/libLLVMPowerPCDisassembler.so.6
-/usr/lib/libLLVMPowerPCDisassembler.so.6.0.1
-/usr/lib/libLLVMPowerPCInfo.so.6
-/usr/lib/libLLVMPowerPCInfo.so.6.0.1
-/usr/lib/libLLVMProfileData.so.6
-/usr/lib/libLLVMProfileData.so.6.0.1
-/usr/lib/libLLVMRuntimeDyld.so.6
-/usr/lib/libLLVMRuntimeDyld.so.6.0.1
-/usr/lib/libLLVMScalarOpts.so.6
-/usr/lib/libLLVMScalarOpts.so.6.0.1
-/usr/lib/libLLVMSelectionDAG.so.6
-/usr/lib/libLLVMSelectionDAG.so.6.0.1
-/usr/lib/libLLVMSparcAsmParser.so.6
-/usr/lib/libLLVMSparcAsmParser.so.6.0.1
-/usr/lib/libLLVMSparcAsmPrinter.so.6
-/usr/lib/libLLVMSparcAsmPrinter.so.6.0.1
-/usr/lib/libLLVMSparcCodeGen.so.6
-/usr/lib/libLLVMSparcCodeGen.so.6.0.1
-/usr/lib/libLLVMSparcDesc.so.6
-/usr/lib/libLLVMSparcDesc.so.6.0.1
-/usr/lib/libLLVMSparcDisassembler.so.6
-/usr/lib/libLLVMSparcDisassembler.so.6.0.1
-/usr/lib/libLLVMSparcInfo.so.6
-/usr/lib/libLLVMSparcInfo.so.6.0.1
-/usr/lib/libLLVMSupport.so.6
-/usr/lib/libLLVMSupport.so.6.0.1
-/usr/lib/libLLVMSymbolize.so.6
-/usr/lib/libLLVMSymbolize.so.6.0.1
-/usr/lib/libLLVMSystemZAsmParser.so.6
-/usr/lib/libLLVMSystemZAsmParser.so.6.0.1
-/usr/lib/libLLVMSystemZAsmPrinter.so.6
-/usr/lib/libLLVMSystemZAsmPrinter.so.6.0.1
-/usr/lib/libLLVMSystemZCodeGen.so.6
-/usr/lib/libLLVMSystemZCodeGen.so.6.0.1
-/usr/lib/libLLVMSystemZDesc.so.6
-/usr/lib/libLLVMSystemZDesc.so.6.0.1
-/usr/lib/libLLVMSystemZDisassembler.so.6
-/usr/lib/libLLVMSystemZDisassembler.so.6.0.1
-/usr/lib/libLLVMSystemZInfo.so.6
-/usr/lib/libLLVMSystemZInfo.so.6.0.1
-/usr/lib/libLLVMTableGen.so.6
-/usr/lib/libLLVMTableGen.so.6.0.1
-/usr/lib/libLLVMTarget.so.6
-/usr/lib/libLLVMTarget.so.6.0.1
-/usr/lib/libLLVMTransformUtils.so.6
-/usr/lib/libLLVMTransformUtils.so.6.0.1
-/usr/lib/libLLVMVectorize.so.6
-/usr/lib/libLLVMVectorize.so.6.0.1
-/usr/lib/libLLVMWindowsManifest.so.6
-/usr/lib/libLLVMWindowsManifest.so.6.0.1
-/usr/lib/libLLVMX86AsmParser.so.6
-/usr/lib/libLLVMX86AsmParser.so.6.0.1
-/usr/lib/libLLVMX86AsmPrinter.so.6
-/usr/lib/libLLVMX86AsmPrinter.so.6.0.1
-/usr/lib/libLLVMX86CodeGen.so.6
-/usr/lib/libLLVMX86CodeGen.so.6.0.1
-/usr/lib/libLLVMX86Desc.so.6
-/usr/lib/libLLVMX86Desc.so.6.0.1
-/usr/lib/libLLVMX86Disassembler.so.6
-/usr/lib/libLLVMX86Disassembler.so.6.0.1
-/usr/lib/libLLVMX86Info.so.6
-/usr/lib/libLLVMX86Info.so.6.0.1
-/usr/lib/libLLVMX86Utils.so.6
-/usr/lib/libLLVMX86Utils.so.6.0.1
-/usr/lib/libLLVMXCoreAsmPrinter.so.6
-/usr/lib/libLLVMXCoreAsmPrinter.so.6.0.1
-/usr/lib/libLLVMXCoreCodeGen.so.6
-/usr/lib/libLLVMXCoreCodeGen.so.6.0.1
-/usr/lib/libLLVMXCoreDesc.so.6
-/usr/lib/libLLVMXCoreDesc.so.6.0.1
-/usr/lib/libLLVMXCoreDisassembler.so.6
-/usr/lib/libLLVMXCoreDisassembler.so.6.0.1
-/usr/lib/libLLVMXCoreInfo.so.6
-/usr/lib/libLLVMXCoreInfo.so.6.0.1
-/usr/lib/libLLVMXRay.so.6
-/usr/lib/libLLVMXRay.so.6.0.1
-/usr/lib/libLLVMipo.so.6
-/usr/lib/libLLVMipo.so.6.0.1
-/usr/lib/libLTO.so.6
-/usr/lib/libLTO.so.6.0.1
-/usr/lib/libclang.so.6
-/usr/lib/libclang.so.6.0
-/usr/lib/libclangARCMigrate.so.6
-/usr/lib/libclangARCMigrate.so.6.0.1
-/usr/lib/libclangAST.so.6
-/usr/lib/libclangAST.so.6.0.1
-/usr/lib/libclangASTMatchers.so.6
-/usr/lib/libclangASTMatchers.so.6.0.1
-/usr/lib/libclangAnalysis.so.6
-/usr/lib/libclangAnalysis.so.6.0.1
-/usr/lib/libclangApplyReplacements.so.6
-/usr/lib/libclangApplyReplacements.so.6.0.1
-/usr/lib/libclangBasic.so.6
-/usr/lib/libclangBasic.so.6.0.1
-/usr/lib/libclangChangeNamespace.so.6
-/usr/lib/libclangChangeNamespace.so.6.0.1
-/usr/lib/libclangCodeGen.so.6
-/usr/lib/libclangCodeGen.so.6.0.1
-/usr/lib/libclangCrossTU.so.6
-/usr/lib/libclangCrossTU.so.6.0.1
-/usr/lib/libclangDaemon.so.6
-/usr/lib/libclangDaemon.so.6.0.1
-/usr/lib/libclangDriver.so.6
-/usr/lib/libclangDriver.so.6.0.1
-/usr/lib/libclangDynamicASTMatchers.so.6
-/usr/lib/libclangDynamicASTMatchers.so.6.0.1
-/usr/lib/libclangEdit.so.6
-/usr/lib/libclangEdit.so.6.0.1
-/usr/lib/libclangFormat.so.6
-/usr/lib/libclangFormat.so.6.0.1
-/usr/lib/libclangFrontend.so.6
-/usr/lib/libclangFrontend.so.6.0.1
-/usr/lib/libclangFrontendTool.so.6
-/usr/lib/libclangFrontendTool.so.6.0.1
-/usr/lib/libclangHandleCXX.so.6
-/usr/lib/libclangHandleCXX.so.6.0.1
-/usr/lib/libclangIncludeFixer.so.6
-/usr/lib/libclangIncludeFixer.so.6.0.1
-/usr/lib/libclangIncludeFixerPlugin.so.6
-/usr/lib/libclangIncludeFixerPlugin.so.6.0.1
-/usr/lib/libclangIndex.so.6
-/usr/lib/libclangIndex.so.6.0.1
-/usr/lib/libclangLex.so.6
-/usr/lib/libclangLex.so.6.0.1
-/usr/lib/libclangMove.so.6
-/usr/lib/libclangMove.so.6.0.1
-/usr/lib/libclangParse.so.6
-/usr/lib/libclangParse.so.6.0.1
-/usr/lib/libclangQuery.so.6
-/usr/lib/libclangQuery.so.6.0.1
-/usr/lib/libclangReorderFields.so.6
-/usr/lib/libclangReorderFields.so.6.0.1
-/usr/lib/libclangRewrite.so.6
-/usr/lib/libclangRewrite.so.6.0.1
-/usr/lib/libclangRewriteFrontend.so.6
-/usr/lib/libclangRewriteFrontend.so.6.0.1
-/usr/lib/libclangSema.so.6
-/usr/lib/libclangSema.so.6.0.1
-/usr/lib/libclangSerialization.so.6
-/usr/lib/libclangSerialization.so.6.0.1
-/usr/lib/libclangStaticAnalyzerCheckers.so.6
-/usr/lib/libclangStaticAnalyzerCheckers.so.6.0.1
-/usr/lib/libclangStaticAnalyzerCore.so.6
-/usr/lib/libclangStaticAnalyzerCore.so.6.0.1
-/usr/lib/libclangStaticAnalyzerFrontend.so.6
-/usr/lib/libclangStaticAnalyzerFrontend.so.6.0.1
-/usr/lib/libclangTidy.so.6
-/usr/lib/libclangTidy.so.6.0.1
-/usr/lib/libclangTidyAndroidModule.so.6
-/usr/lib/libclangTidyAndroidModule.so.6.0.1
-/usr/lib/libclangTidyBoostModule.so.6
-/usr/lib/libclangTidyBoostModule.so.6.0.1
-/usr/lib/libclangTidyBugproneModule.so.6
-/usr/lib/libclangTidyBugproneModule.so.6.0.1
-/usr/lib/libclangTidyCERTModule.so.6
-/usr/lib/libclangTidyCERTModule.so.6.0.1
-/usr/lib/libclangTidyCppCoreGuidelinesModule.so.6
-/usr/lib/libclangTidyCppCoreGuidelinesModule.so.6.0.1
-/usr/lib/libclangTidyFuchsiaModule.so.6
-/usr/lib/libclangTidyFuchsiaModule.so.6.0.1
-/usr/lib/libclangTidyGoogleModule.so.6
-/usr/lib/libclangTidyGoogleModule.so.6.0.1
-/usr/lib/libclangTidyHICPPModule.so.6
-/usr/lib/libclangTidyHICPPModule.so.6.0.1
-/usr/lib/libclangTidyLLVMModule.so.6
-/usr/lib/libclangTidyLLVMModule.so.6.0.1
-/usr/lib/libclangTidyMPIModule.so.6
-/usr/lib/libclangTidyMPIModule.so.6.0.1
-/usr/lib/libclangTidyMiscModule.so.6
-/usr/lib/libclangTidyMiscModule.so.6.0.1
-/usr/lib/libclangTidyModernizeModule.so.6
-/usr/lib/libclangTidyModernizeModule.so.6.0.1
-/usr/lib/libclangTidyObjCModule.so.6
-/usr/lib/libclangTidyObjCModule.so.6.0.1
-/usr/lib/libclangTidyPerformanceModule.so.6
-/usr/lib/libclangTidyPerformanceModule.so.6.0.1
-/usr/lib/libclangTidyPlugin.so.6
-/usr/lib/libclangTidyPlugin.so.6.0.1
-/usr/lib/libclangTidyReadabilityModule.so.6
-/usr/lib/libclangTidyReadabilityModule.so.6.0.1
-/usr/lib/libclangTidyUtils.so.6
-/usr/lib/libclangTidyUtils.so.6.0.1
-/usr/lib/libclangTooling.so.6
-/usr/lib/libclangTooling.so.6.0.1
-/usr/lib/libclangToolingASTDiff.so.6
-/usr/lib/libclangToolingASTDiff.so.6.0.1
-/usr/lib/libclangToolingCore.so.6
-/usr/lib/libclangToolingCore.so.6.0.1
-/usr/lib/libclangToolingRefactor.so.6
-/usr/lib/libclangToolingRefactor.so.6.0.1
-/usr/lib/libfindAllSymbols.so.6
-/usr/lib/libfindAllSymbols.so.6.0.1
-/usr/lib/liblldCOFF.so.6
-/usr/lib/liblldCOFF.so.6.0.1
-/usr/lib/liblldCommon.so.6
-/usr/lib/liblldCommon.so.6.0.1
-/usr/lib/liblldCore.so.6
-/usr/lib/liblldCore.so.6.0.1
-/usr/lib/liblldDriver.so.6
-/usr/lib/liblldDriver.so.6.0.1
-/usr/lib/liblldELF.so.6
-/usr/lib/liblldELF.so.6.0.1
-/usr/lib/liblldMachO.so.6
-/usr/lib/liblldMachO.so.6.0.1
-/usr/lib/liblldMinGW.so.6
-/usr/lib/liblldMinGW.so.6.0.1
-/usr/lib/liblldReaderWriter.so.6
-/usr/lib/liblldReaderWriter.so.6.0.1
-/usr/lib/liblldWasm.so.6
-/usr/lib/liblldWasm.so.6.0.1
-/usr/lib/liblldYAML.so.6
-/usr/lib/liblldYAML.so.6.0.1
+/usr/lib64/libLLVMAMDGPUAsmParser.so.6
+/usr/lib64/libLLVMAMDGPUAsmParser.so.6.0.1
+/usr/lib64/libLLVMAMDGPUAsmPrinter.so.6
+/usr/lib64/libLLVMAMDGPUAsmPrinter.so.6.0.1
+/usr/lib64/libLLVMAMDGPUCodeGen.so.6
+/usr/lib64/libLLVMAMDGPUCodeGen.so.6.0.1
+/usr/lib64/libLLVMAMDGPUDesc.so.6
+/usr/lib64/libLLVMAMDGPUDesc.so.6.0.1
+/usr/lib64/libLLVMAMDGPUDisassembler.so.6
+/usr/lib64/libLLVMAMDGPUDisassembler.so.6.0.1
+/usr/lib64/libLLVMAMDGPUInfo.so.6
+/usr/lib64/libLLVMAMDGPUInfo.so.6.0.1
+/usr/lib64/libLLVMAMDGPUUtils.so.6
+/usr/lib64/libLLVMAMDGPUUtils.so.6.0.1
+/usr/lib64/libLLVMAnalysis.so.6
+/usr/lib64/libLLVMAnalysis.so.6.0.1
+/usr/lib64/libLLVMAsmParser.so.6
+/usr/lib64/libLLVMAsmParser.so.6.0.1
+/usr/lib64/libLLVMAsmPrinter.so.6
+/usr/lib64/libLLVMAsmPrinter.so.6.0.1
+/usr/lib64/libLLVMBPFAsmParser.so.6
+/usr/lib64/libLLVMBPFAsmParser.so.6.0.1
+/usr/lib64/libLLVMBPFAsmPrinter.so.6
+/usr/lib64/libLLVMBPFAsmPrinter.so.6.0.1
+/usr/lib64/libLLVMBPFCodeGen.so.6
+/usr/lib64/libLLVMBPFCodeGen.so.6.0.1
+/usr/lib64/libLLVMBPFDesc.so.6
+/usr/lib64/libLLVMBPFDesc.so.6.0.1
+/usr/lib64/libLLVMBPFDisassembler.so.6
+/usr/lib64/libLLVMBPFDisassembler.so.6.0.1
+/usr/lib64/libLLVMBPFInfo.so.6
+/usr/lib64/libLLVMBPFInfo.so.6.0.1
+/usr/lib64/libLLVMBinaryFormat.so.6
+/usr/lib64/libLLVMBinaryFormat.so.6.0.1
+/usr/lib64/libLLVMBitReader.so.6
+/usr/lib64/libLLVMBitReader.so.6.0.1
+/usr/lib64/libLLVMBitWriter.so.6
+/usr/lib64/libLLVMBitWriter.so.6.0.1
+/usr/lib64/libLLVMCodeGen.so.6
+/usr/lib64/libLLVMCodeGen.so.6.0.1
+/usr/lib64/libLLVMCore.so.6
+/usr/lib64/libLLVMCore.so.6.0.1
+/usr/lib64/libLLVMCoroutines.so.6
+/usr/lib64/libLLVMCoroutines.so.6.0.1
+/usr/lib64/libLLVMCoverage.so.6
+/usr/lib64/libLLVMCoverage.so.6.0.1
+/usr/lib64/libLLVMDebugInfoCodeView.so.6
+/usr/lib64/libLLVMDebugInfoCodeView.so.6.0.1
+/usr/lib64/libLLVMDebugInfoDWARF.so.6
+/usr/lib64/libLLVMDebugInfoDWARF.so.6.0.1
+/usr/lib64/libLLVMDebugInfoMSF.so.6
+/usr/lib64/libLLVMDebugInfoMSF.so.6.0.1
+/usr/lib64/libLLVMDebugInfoPDB.so.6
+/usr/lib64/libLLVMDebugInfoPDB.so.6.0.1
+/usr/lib64/libLLVMDemangle.so.6
+/usr/lib64/libLLVMDemangle.so.6.0.1
+/usr/lib64/libLLVMDlltoolDriver.so.6
+/usr/lib64/libLLVMDlltoolDriver.so.6.0.1
+/usr/lib64/libLLVMExecutionEngine.so.6
+/usr/lib64/libLLVMExecutionEngine.so.6.0.1
+/usr/lib64/libLLVMFuzzMutate.so.6
+/usr/lib64/libLLVMFuzzMutate.so.6.0.1
+/usr/lib64/libLLVMGlobalISel.so.6
+/usr/lib64/libLLVMGlobalISel.so.6.0.1
+/usr/lib64/libLLVMIRReader.so.6
+/usr/lib64/libLLVMIRReader.so.6.0.1
+/usr/lib64/libLLVMInstCombine.so.6
+/usr/lib64/libLLVMInstCombine.so.6.0.1
+/usr/lib64/libLLVMInstrumentation.so.6
+/usr/lib64/libLLVMInstrumentation.so.6.0.1
+/usr/lib64/libLLVMInterpreter.so.6
+/usr/lib64/libLLVMInterpreter.so.6.0.1
+/usr/lib64/libLLVMLTO.so.6
+/usr/lib64/libLLVMLTO.so.6.0.1
+/usr/lib64/libLLVMLibDriver.so.6
+/usr/lib64/libLLVMLibDriver.so.6.0.1
+/usr/lib64/libLLVMLineEditor.so.6
+/usr/lib64/libLLVMLineEditor.so.6.0.1
+/usr/lib64/libLLVMLinker.so.6
+/usr/lib64/libLLVMLinker.so.6.0.1
+/usr/lib64/libLLVMMC.so.6
+/usr/lib64/libLLVMMC.so.6.0.1
+/usr/lib64/libLLVMMCDisassembler.so.6
+/usr/lib64/libLLVMMCDisassembler.so.6.0.1
+/usr/lib64/libLLVMMCJIT.so.6
+/usr/lib64/libLLVMMCJIT.so.6.0.1
+/usr/lib64/libLLVMMCParser.so.6
+/usr/lib64/libLLVMMCParser.so.6.0.1
+/usr/lib64/libLLVMMIRParser.so.6
+/usr/lib64/libLLVMMIRParser.so.6.0.1
+/usr/lib64/libLLVMNVPTXAsmPrinter.so.6
+/usr/lib64/libLLVMNVPTXAsmPrinter.so.6.0.1
+/usr/lib64/libLLVMNVPTXCodeGen.so.6
+/usr/lib64/libLLVMNVPTXCodeGen.so.6.0.1
+/usr/lib64/libLLVMNVPTXDesc.so.6
+/usr/lib64/libLLVMNVPTXDesc.so.6.0.1
+/usr/lib64/libLLVMNVPTXInfo.so.6
+/usr/lib64/libLLVMNVPTXInfo.so.6.0.1
+/usr/lib64/libLLVMObjCARCOpts.so.6
+/usr/lib64/libLLVMObjCARCOpts.so.6.0.1
+/usr/lib64/libLLVMObject.so.6
+/usr/lib64/libLLVMObject.so.6.0.1
+/usr/lib64/libLLVMObjectYAML.so.6
+/usr/lib64/libLLVMObjectYAML.so.6.0.1
+/usr/lib64/libLLVMOption.so.6
+/usr/lib64/libLLVMOption.so.6.0.1
+/usr/lib64/libLLVMOrcJIT.so.6
+/usr/lib64/libLLVMOrcJIT.so.6.0.1
+/usr/lib64/libLLVMPasses.so.6
+/usr/lib64/libLLVMPasses.so.6.0.1
+/usr/lib64/libLLVMProfileData.so.6
+/usr/lib64/libLLVMProfileData.so.6.0.1
+/usr/lib64/libLLVMRuntimeDyld.so.6
+/usr/lib64/libLLVMRuntimeDyld.so.6.0.1
+/usr/lib64/libLLVMScalarOpts.so.6
+/usr/lib64/libLLVMScalarOpts.so.6.0.1
+/usr/lib64/libLLVMSelectionDAG.so.6
+/usr/lib64/libLLVMSelectionDAG.so.6.0.1
+/usr/lib64/libLLVMSupport.so.6
+/usr/lib64/libLLVMSupport.so.6.0.1
+/usr/lib64/libLLVMSymbolize.so.6
+/usr/lib64/libLLVMSymbolize.so.6.0.1
+/usr/lib64/libLLVMTableGen.so.6
+/usr/lib64/libLLVMTableGen.so.6.0.1
+/usr/lib64/libLLVMTarget.so.6
+/usr/lib64/libLLVMTarget.so.6.0.1
+/usr/lib64/libLLVMTransformUtils.so.6
+/usr/lib64/libLLVMTransformUtils.so.6.0.1
+/usr/lib64/libLLVMVectorize.so.6
+/usr/lib64/libLLVMVectorize.so.6.0.1
+/usr/lib64/libLLVMWindowsManifest.so.6
+/usr/lib64/libLLVMWindowsManifest.so.6.0.1
+/usr/lib64/libLLVMX86AsmParser.so.6
+/usr/lib64/libLLVMX86AsmParser.so.6.0.1
+/usr/lib64/libLLVMX86AsmPrinter.so.6
+/usr/lib64/libLLVMX86AsmPrinter.so.6.0.1
+/usr/lib64/libLLVMX86CodeGen.so.6
+/usr/lib64/libLLVMX86CodeGen.so.6.0.1
+/usr/lib64/libLLVMX86Desc.so.6
+/usr/lib64/libLLVMX86Desc.so.6.0.1
+/usr/lib64/libLLVMX86Disassembler.so.6
+/usr/lib64/libLLVMX86Disassembler.so.6.0.1
+/usr/lib64/libLLVMX86Info.so.6
+/usr/lib64/libLLVMX86Info.so.6.0.1
+/usr/lib64/libLLVMX86Utils.so.6
+/usr/lib64/libLLVMX86Utils.so.6.0.1
+/usr/lib64/libLLVMXRay.so.6
+/usr/lib64/libLLVMXRay.so.6.0.1
+/usr/lib64/libLLVMipo.so.6
+/usr/lib64/libLLVMipo.so.6.0.1
+/usr/lib64/libLTO.so.6
+/usr/lib64/libLTO.so.6.0.1
+/usr/lib64/libclang.so.6
+/usr/lib64/libclang.so.6.0
+/usr/lib64/libclangARCMigrate.so.6
+/usr/lib64/libclangARCMigrate.so.6.0.1
+/usr/lib64/libclangAST.so.6
+/usr/lib64/libclangAST.so.6.0.1
+/usr/lib64/libclangASTMatchers.so.6
+/usr/lib64/libclangASTMatchers.so.6.0.1
+/usr/lib64/libclangAnalysis.so.6
+/usr/lib64/libclangAnalysis.so.6.0.1
+/usr/lib64/libclangApplyReplacements.so.6
+/usr/lib64/libclangApplyReplacements.so.6.0.1
+/usr/lib64/libclangBasic.so.6
+/usr/lib64/libclangBasic.so.6.0.1
+/usr/lib64/libclangChangeNamespace.so.6
+/usr/lib64/libclangChangeNamespace.so.6.0.1
+/usr/lib64/libclangCodeGen.so.6
+/usr/lib64/libclangCodeGen.so.6.0.1
+/usr/lib64/libclangCrossTU.so.6
+/usr/lib64/libclangCrossTU.so.6.0.1
+/usr/lib64/libclangDaemon.so.6
+/usr/lib64/libclangDaemon.so.6.0.1
+/usr/lib64/libclangDriver.so.6
+/usr/lib64/libclangDriver.so.6.0.1
+/usr/lib64/libclangDynamicASTMatchers.so.6
+/usr/lib64/libclangDynamicASTMatchers.so.6.0.1
+/usr/lib64/libclangEdit.so.6
+/usr/lib64/libclangEdit.so.6.0.1
+/usr/lib64/libclangFormat.so.6
+/usr/lib64/libclangFormat.so.6.0.1
+/usr/lib64/libclangFrontend.so.6
+/usr/lib64/libclangFrontend.so.6.0.1
+/usr/lib64/libclangFrontendTool.so.6
+/usr/lib64/libclangFrontendTool.so.6.0.1
+/usr/lib64/libclangHandleCXX.so.6
+/usr/lib64/libclangHandleCXX.so.6.0.1
+/usr/lib64/libclangIncludeFixer.so.6
+/usr/lib64/libclangIncludeFixer.so.6.0.1
+/usr/lib64/libclangIncludeFixerPlugin.so.6
+/usr/lib64/libclangIncludeFixerPlugin.so.6.0.1
+/usr/lib64/libclangIndex.so.6
+/usr/lib64/libclangIndex.so.6.0.1
+/usr/lib64/libclangLex.so.6
+/usr/lib64/libclangLex.so.6.0.1
+/usr/lib64/libclangMove.so.6
+/usr/lib64/libclangMove.so.6.0.1
+/usr/lib64/libclangParse.so.6
+/usr/lib64/libclangParse.so.6.0.1
+/usr/lib64/libclangQuery.so.6
+/usr/lib64/libclangQuery.so.6.0.1
+/usr/lib64/libclangReorderFields.so.6
+/usr/lib64/libclangReorderFields.so.6.0.1
+/usr/lib64/libclangRewrite.so.6
+/usr/lib64/libclangRewrite.so.6.0.1
+/usr/lib64/libclangRewriteFrontend.so.6
+/usr/lib64/libclangRewriteFrontend.so.6.0.1
+/usr/lib64/libclangSema.so.6
+/usr/lib64/libclangSema.so.6.0.1
+/usr/lib64/libclangSerialization.so.6
+/usr/lib64/libclangSerialization.so.6.0.1
+/usr/lib64/libclangStaticAnalyzerCheckers.so.6
+/usr/lib64/libclangStaticAnalyzerCheckers.so.6.0.1
+/usr/lib64/libclangStaticAnalyzerCore.so.6
+/usr/lib64/libclangStaticAnalyzerCore.so.6.0.1
+/usr/lib64/libclangStaticAnalyzerFrontend.so.6
+/usr/lib64/libclangStaticAnalyzerFrontend.so.6.0.1
+/usr/lib64/libclangTidy.so.6
+/usr/lib64/libclangTidy.so.6.0.1
+/usr/lib64/libclangTidyAndroidModule.so.6
+/usr/lib64/libclangTidyAndroidModule.so.6.0.1
+/usr/lib64/libclangTidyBoostModule.so.6
+/usr/lib64/libclangTidyBoostModule.so.6.0.1
+/usr/lib64/libclangTidyBugproneModule.so.6
+/usr/lib64/libclangTidyBugproneModule.so.6.0.1
+/usr/lib64/libclangTidyCERTModule.so.6
+/usr/lib64/libclangTidyCERTModule.so.6.0.1
+/usr/lib64/libclangTidyCppCoreGuidelinesModule.so.6
+/usr/lib64/libclangTidyCppCoreGuidelinesModule.so.6.0.1
+/usr/lib64/libclangTidyFuchsiaModule.so.6
+/usr/lib64/libclangTidyFuchsiaModule.so.6.0.1
+/usr/lib64/libclangTidyGoogleModule.so.6
+/usr/lib64/libclangTidyGoogleModule.so.6.0.1
+/usr/lib64/libclangTidyHICPPModule.so.6
+/usr/lib64/libclangTidyHICPPModule.so.6.0.1
+/usr/lib64/libclangTidyLLVMModule.so.6
+/usr/lib64/libclangTidyLLVMModule.so.6.0.1
+/usr/lib64/libclangTidyMPIModule.so.6
+/usr/lib64/libclangTidyMPIModule.so.6.0.1
+/usr/lib64/libclangTidyMiscModule.so.6
+/usr/lib64/libclangTidyMiscModule.so.6.0.1
+/usr/lib64/libclangTidyModernizeModule.so.6
+/usr/lib64/libclangTidyModernizeModule.so.6.0.1
+/usr/lib64/libclangTidyObjCModule.so.6
+/usr/lib64/libclangTidyObjCModule.so.6.0.1
+/usr/lib64/libclangTidyPerformanceModule.so.6
+/usr/lib64/libclangTidyPerformanceModule.so.6.0.1
+/usr/lib64/libclangTidyPlugin.so.6
+/usr/lib64/libclangTidyPlugin.so.6.0.1
+/usr/lib64/libclangTidyReadabilityModule.so.6
+/usr/lib64/libclangTidyReadabilityModule.so.6.0.1
+/usr/lib64/libclangTidyUtils.so.6
+/usr/lib64/libclangTidyUtils.so.6.0.1
+/usr/lib64/libclangTooling.so.6
+/usr/lib64/libclangTooling.so.6.0.1
+/usr/lib64/libclangToolingASTDiff.so.6
+/usr/lib64/libclangToolingASTDiff.so.6.0.1
+/usr/lib64/libclangToolingCore.so.6
+/usr/lib64/libclangToolingCore.so.6.0.1
+/usr/lib64/libclangToolingRefactor.so.6
+/usr/lib64/libclangToolingRefactor.so.6.0.1
+/usr/lib64/libfindAllSymbols.so.6
+/usr/lib64/libfindAllSymbols.so.6.0.1
+/usr/lib64/liblldCOFF.so.6
+/usr/lib64/liblldCOFF.so.6.0.1
+/usr/lib64/liblldCommon.so.6
+/usr/lib64/liblldCommon.so.6.0.1
+/usr/lib64/liblldCore.so.6
+/usr/lib64/liblldCore.so.6.0.1
+/usr/lib64/liblldDriver.so.6
+/usr/lib64/liblldDriver.so.6.0.1
+/usr/lib64/liblldELF.so.6
+/usr/lib64/liblldELF.so.6.0.1
+/usr/lib64/liblldMachO.so.6
+/usr/lib64/liblldMachO.so.6.0.1
+/usr/lib64/liblldMinGW.so.6
+/usr/lib64/liblldMinGW.so.6.0.1
+/usr/lib64/liblldReaderWriter.so.6
+/usr/lib64/liblldReaderWriter.so.6.0.1
+/usr/lib64/liblldWasm.so.6
+/usr/lib64/liblldWasm.so.6.0.1
+/usr/lib64/liblldYAML.so.6
+/usr/lib64/liblldYAML.so.6.0.1
 
 %files license
 %defattr(-,root,root,-)
