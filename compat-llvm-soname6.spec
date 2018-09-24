@@ -6,13 +6,12 @@
 #
 Name     : compat-llvm-soname6
 Version  : 6.0.1
-Release  : 2
+Release  : 3
 URL      : http://releases.llvm.org/6.0.1/llvm-6.0.1.src.tar.xz
 Source0  : http://releases.llvm.org/6.0.1/llvm-6.0.1.src.tar.xz
 Source1  : http://releases.llvm.org/6.0.1/cfe-6.0.1.src.tar.xz
-Source2  : https://releases.llvm.org/6.0.1/clang-tools-extra-6.0.1.src.tar.xz
-Source3  : https://releases.llvm.org/6.0.1/lld-6.0.1.src.tar.xz
-Source4  : https://releases.llvm.org/6.0.1/openmp-6.0.1.src.tar.xz
+Source2  : https://releases.llvm.org/6.0.1/lld-6.0.1.src.tar.xz
+Source3  : https://releases.llvm.org/6.0.1/openmp-6.0.1.src.tar.xz
 Source99 : http://releases.llvm.org/6.0.1/llvm-6.0.1.src.tar.xz.sig
 Summary  : No detailed summary available
 Group    : Development/Tools
@@ -36,7 +35,6 @@ BuildRequires : googletest-dev
 BuildRequires : libffi-dev
 BuildRequires : libstdc++-dev
 BuildRequires : libxml2-dev
-BuildRequires : llvm-dev
 BuildRequires : ncurses-dev
 BuildRequires : perl
 BuildRequires : pkg-config
@@ -117,12 +115,8 @@ cd ..
 %setup -q -T -D -n llvm-6.0.1.src -b 2
 cd ..
 %setup -q -T -D -n llvm-6.0.1.src -b 3
-cd ..
-%setup -q -T -D -n llvm-6.0.1.src -b 4
 mkdir -p tools/clang
 mv %{_topdir}/BUILD/cfe-6.0.1.src/* %{_topdir}/BUILD/llvm-6.0.1.src/tools/clang
-mkdir -p tools/extra
-mv %{_topdir}/BUILD/clang-tools-extra-6.0.1.src/* %{_topdir}/BUILD/llvm-6.0.1.src/tools/extra
 mkdir -p tools/lld
 mv %{_topdir}/BUILD/lld-6.0.1.src/* %{_topdir}/BUILD/llvm-6.0.1.src/tools/lld
 mkdir -p projects/openmp
@@ -133,23 +127,19 @@ export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C
-export SOURCE_DATE_EPOCH=1537486226
+export SOURCE_DATE_EPOCH=1537826497
 unset LD_AS_NEEDED
 mkdir -p clr-build
 pushd clr-build
-export CC=clang
-export CXX=clang++
-export LD=ld.gold
 export CFLAGS="-O2 -g -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector --param=ssp-buffer-size=32 -Wformat -Wformat-security -Wno-error   -Wl,-z,max-page-size=0x1000 -m64 -march=westmere -mtune=haswell"
 export CXXFLAGS=$CFLAGS
 unset LDFLAGS
-unset LDFLAGS
-%cmake .. -DLLVM_ENABLE_ZLIB:BOOL=ON -DLLVM_LIBDIR_SUFFIX=64 -DLLVM_BINUTILS_INCDIR=/usr/include -DLLVM_TARGETS_TO_BUILD="X86;BPF;AMDGPU;NVPTX" -DLLVM_INSTALL_UTILS=ON -DLLVM_ENABLE_CXX1Y=ON -DC_INCLUDE_DIRS="/usr/include/c++:/usr/include/c++/x86_64-generic-linux:/usr/include"
+%cmake .. -DLLVM_ENABLE_ZLIB:BOOL=ON -DLLVM_LIBDIR_SUFFIX=64 -DLLVM_BINUTILS_INCDIR=/usr/include -DLLVM_TARGETS_TO_BUILD="X86;BPF;AMDGPU;NVPTX" -DLLVM_INSTALL_UTILS=ON -DLLVM_ENABLE_CXX1Y=ON -DC_INCLUDE_DIRS="/usr/include/c++:/usr/include/c++/x86_64-generic-linux:/usr/include" -DLLVM_TOOLS_INSTALL_DIR="bin/clang6/" -DLLVM_MAIN_INCLUDE_DIR="include/clang6/"
 make  %{?_smp_mflags}
 popd
 
 %install
-export SOURCE_DATE_EPOCH=1537486226
+export SOURCE_DATE_EPOCH=1537826497
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/doc/compat-llvm-soname6
 cp LICENSE.TXT %{buildroot}/usr/share/doc/compat-llvm-soname6/LICENSE.TXT
@@ -157,11 +147,6 @@ cp projects/openmp/LICENSE.txt %{buildroot}/usr/share/doc/compat-llvm-soname6/pr
 cp test/YAMLParser/LICENSE.txt %{buildroot}/usr/share/doc/compat-llvm-soname6/test_YAMLParser_LICENSE.txt
 cp tools/clang/LICENSE.TXT %{buildroot}/usr/share/doc/compat-llvm-soname6/tools_clang_LICENSE.TXT
 cp tools/clang/tools/clang-format-vs/ClangFormat/license.txt %{buildroot}/usr/share/doc/compat-llvm-soname6/tools_clang_tools_clang-format-vs_ClangFormat_license.txt
-cp tools/extra/LICENSE.TXT %{buildroot}/usr/share/doc/compat-llvm-soname6/tools_extra_LICENSE.TXT
-cp tools/extra/clang-tidy-vs/ClangTidy/license.txt %{buildroot}/usr/share/doc/compat-llvm-soname6/tools_extra_clang-tidy-vs_ClangTidy_license.txt
-cp tools/extra/clang-tidy/cert/LICENSE.TXT %{buildroot}/usr/share/doc/compat-llvm-soname6/tools_extra_clang-tidy_cert_LICENSE.TXT
-cp tools/extra/clang-tidy/hicpp/LICENSE.TXT %{buildroot}/usr/share/doc/compat-llvm-soname6/tools_extra_clang-tidy_hicpp_LICENSE.TXT
-cp tools/extra/clangd/clients/clangd-vscode/LICENSE %{buildroot}/usr/share/doc/compat-llvm-soname6/tools_extra_clangd_clients_clangd-vscode_LICENSE
 cp tools/lld/LICENSE.TXT %{buildroot}/usr/share/doc/compat-llvm-soname6/tools_lld_LICENSE.TXT
 cp utils/unittest/googlemock/LICENSE.txt %{buildroot}/usr/share/doc/compat-llvm-soname6/utils_unittest_googlemock_LICENSE.txt
 cp utils/unittest/googletest/LICENSE.TXT %{buildroot}/usr/share/doc/compat-llvm-soname6/utils_unittest_googletest_LICENSE.TXT
@@ -179,96 +164,87 @@ popd
 %files bin
 %defattr(-,root,root,-)
 %exclude /usr/bin/FileCheck
-%exclude /usr/bin/bugpoint
 %exclude /usr/bin/c-index-test
 %exclude /usr/bin/clang
-%exclude /usr/bin/clang++
-%exclude /usr/bin/clang-6.0
-%exclude /usr/bin/clang-apply-replacements
-%exclude /usr/bin/clang-change-namespace
 %exclude /usr/bin/clang-check
-%exclude /usr/bin/clang-cl
-%exclude /usr/bin/clang-cpp
 %exclude /usr/bin/clang-format
 %exclude /usr/bin/clang-func-mapping
 %exclude /usr/bin/clang-import-test
-%exclude /usr/bin/clang-include-fixer
 %exclude /usr/bin/clang-offload-bundler
-%exclude /usr/bin/clang-query
 %exclude /usr/bin/clang-refactor
 %exclude /usr/bin/clang-rename
-%exclude /usr/bin/clang-reorder-fields
-%exclude /usr/bin/clang-tidy
-%exclude /usr/bin/clangd
 %exclude /usr/bin/count
-%exclude /usr/bin/find-all-symbols
 %exclude /usr/bin/git-clang-format
-%exclude /usr/bin/ld.lld
-%exclude /usr/bin/ld64.lld
-%exclude /usr/bin/llc
 %exclude /usr/bin/lld
-%exclude /usr/bin/lld-link
-%exclude /usr/bin/lli
 %exclude /usr/bin/lli-child-target
 %exclude /usr/bin/llvm-PerfectShuffle
-%exclude /usr/bin/llvm-ar
-%exclude /usr/bin/llvm-as
-%exclude /usr/bin/llvm-bcanalyzer
-%exclude /usr/bin/llvm-c-test
-%exclude /usr/bin/llvm-cat
-%exclude /usr/bin/llvm-cfi-verify
-%exclude /usr/bin/llvm-config
-%exclude /usr/bin/llvm-cov
-%exclude /usr/bin/llvm-cvtres
-%exclude /usr/bin/llvm-cxxdump
-%exclude /usr/bin/llvm-cxxfilt
-%exclude /usr/bin/llvm-diff
-%exclude /usr/bin/llvm-dis
-%exclude /usr/bin/llvm-dlltool
-%exclude /usr/bin/llvm-dsymutil
-%exclude /usr/bin/llvm-dwarfdump
-%exclude /usr/bin/llvm-dwp
-%exclude /usr/bin/llvm-extract
-%exclude /usr/bin/llvm-lib
-%exclude /usr/bin/llvm-link
-%exclude /usr/bin/llvm-lto
-%exclude /usr/bin/llvm-lto2
-%exclude /usr/bin/llvm-mc
-%exclude /usr/bin/llvm-mcmarkup
-%exclude /usr/bin/llvm-modextract
-%exclude /usr/bin/llvm-mt
-%exclude /usr/bin/llvm-nm
-%exclude /usr/bin/llvm-objcopy
-%exclude /usr/bin/llvm-objdump
-%exclude /usr/bin/llvm-opt-report
-%exclude /usr/bin/llvm-pdbutil
-%exclude /usr/bin/llvm-profdata
-%exclude /usr/bin/llvm-ranlib
-%exclude /usr/bin/llvm-rc
-%exclude /usr/bin/llvm-readelf
-%exclude /usr/bin/llvm-readobj
-%exclude /usr/bin/llvm-rtdyld
-%exclude /usr/bin/llvm-size
-%exclude /usr/bin/llvm-split
-%exclude /usr/bin/llvm-stress
-%exclude /usr/bin/llvm-strings
-%exclude /usr/bin/llvm-symbolizer
-%exclude /usr/bin/llvm-tblgen
-%exclude /usr/bin/llvm-xray
-%exclude /usr/bin/modularize
 %exclude /usr/bin/not
-%exclude /usr/bin/obj2yaml
-%exclude /usr/bin/opt
-%exclude /usr/bin/sancov
-%exclude /usr/bin/sanstats
 %exclude /usr/bin/scan-build
 %exclude /usr/bin/scan-view
-%exclude /usr/bin/verify-uselistorder
-%exclude /usr/bin/wasm-ld
 %exclude /usr/bin/yaml-bench
-%exclude /usr/bin/yaml2obj
 %exclude /usr/libexec/c++-analyzer
 %exclude /usr/libexec/ccc-analyzer
+/usr/bin/clang-6.0
+/usr/bin/clang6/bugpoint
+/usr/bin/clang6/clang++
+/usr/bin/clang6/clang-cl
+/usr/bin/clang6/clang-cpp
+/usr/bin/clang6/ld.lld
+/usr/bin/clang6/ld64.lld
+/usr/bin/clang6/llc
+/usr/bin/clang6/lld-link
+/usr/bin/clang6/lli
+/usr/bin/clang6/llvm-ar
+/usr/bin/clang6/llvm-as
+/usr/bin/clang6/llvm-bcanalyzer
+/usr/bin/clang6/llvm-c-test
+/usr/bin/clang6/llvm-cat
+/usr/bin/clang6/llvm-cfi-verify
+/usr/bin/clang6/llvm-config
+/usr/bin/clang6/llvm-cov
+/usr/bin/clang6/llvm-cvtres
+/usr/bin/clang6/llvm-cxxdump
+/usr/bin/clang6/llvm-cxxfilt
+/usr/bin/clang6/llvm-diff
+/usr/bin/clang6/llvm-dis
+/usr/bin/clang6/llvm-dlltool
+/usr/bin/clang6/llvm-dsymutil
+/usr/bin/clang6/llvm-dwarfdump
+/usr/bin/clang6/llvm-dwp
+/usr/bin/clang6/llvm-extract
+/usr/bin/clang6/llvm-lib
+/usr/bin/clang6/llvm-link
+/usr/bin/clang6/llvm-lto
+/usr/bin/clang6/llvm-lto2
+/usr/bin/clang6/llvm-mc
+/usr/bin/clang6/llvm-mcmarkup
+/usr/bin/clang6/llvm-modextract
+/usr/bin/clang6/llvm-mt
+/usr/bin/clang6/llvm-nm
+/usr/bin/clang6/llvm-objcopy
+/usr/bin/clang6/llvm-objdump
+/usr/bin/clang6/llvm-opt-report
+/usr/bin/clang6/llvm-pdbutil
+/usr/bin/clang6/llvm-profdata
+/usr/bin/clang6/llvm-ranlib
+/usr/bin/clang6/llvm-rc
+/usr/bin/clang6/llvm-readelf
+/usr/bin/clang6/llvm-readobj
+/usr/bin/clang6/llvm-rtdyld
+/usr/bin/clang6/llvm-size
+/usr/bin/clang6/llvm-split
+/usr/bin/clang6/llvm-stress
+/usr/bin/clang6/llvm-strings
+/usr/bin/clang6/llvm-symbolizer
+/usr/bin/clang6/llvm-tblgen
+/usr/bin/clang6/llvm-xray
+/usr/bin/clang6/obj2yaml
+/usr/bin/clang6/opt
+/usr/bin/clang6/sancov
+/usr/bin/clang6/sanstats
+/usr/bin/clang6/verify-uselistorder
+/usr/bin/clang6/wasm-ld
+/usr/bin/clang6/yaml2obj
 
 %files data
 %defattr(-,root,root,-)
@@ -278,13 +254,8 @@ popd
 %exclude /usr/share/clang/clang-format-sublime.py
 %exclude /usr/share/clang/clang-format.el
 %exclude /usr/share/clang/clang-format.py
-%exclude /usr/share/clang/clang-include-fixer.el
-%exclude /usr/share/clang/clang-include-fixer.py
 %exclude /usr/share/clang/clang-rename.el
 %exclude /usr/share/clang/clang-rename.py
-%exclude /usr/share/clang/clang-tidy-diff.py
-%exclude /usr/share/clang/run-clang-tidy.py
-%exclude /usr/share/clang/run-find-all-symbols.py
 %exclude /usr/share/opt-viewer/opt-diff.py
 %exclude /usr/share/opt-viewer/opt-stats.py
 %exclude /usr/share/opt-viewer/opt-viewer.py
@@ -2025,113 +1996,6 @@ popd
 %exclude /usr/lib64/BugpointPasses.so
 %exclude /usr/lib64/LLVMHello.so
 %exclude /usr/lib64/LLVMgold.so
-%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_builtin_vars.h
-%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_cmath.h
-%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_complex_builtins.h
-%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_intrinsics.h
-%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_math_forward_declares.h
-%exclude /usr/lib64/clang/6.0.1/include/__clang_cuda_runtime_wrapper.h
-%exclude /usr/lib64/clang/6.0.1/include/__stddef_max_align_t.h
-%exclude /usr/lib64/clang/6.0.1/include/__wmmintrin_aes.h
-%exclude /usr/lib64/clang/6.0.1/include/__wmmintrin_pclmul.h
-%exclude /usr/lib64/clang/6.0.1/include/adxintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/altivec.h
-%exclude /usr/lib64/clang/6.0.1/include/ammintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/arm64intr.h
-%exclude /usr/lib64/clang/6.0.1/include/arm_acle.h
-%exclude /usr/lib64/clang/6.0.1/include/arm_neon.h
-%exclude /usr/lib64/clang/6.0.1/include/armintr.h
-%exclude /usr/lib64/clang/6.0.1/include/avx2intrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512bitalgintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512bwintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512cdintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512dqintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512erintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512fintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512ifmaintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512ifmavlintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512pfintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vbmi2intrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vbmiintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vbmivlintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vlbitalgintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vlbwintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vlcdintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vldqintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vlintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vlvbmi2intrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vlvnniintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vnniintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vpopcntdqintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avx512vpopcntdqvlintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/avxintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/bmi2intrin.h
-%exclude /usr/lib64/clang/6.0.1/include/bmiintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/cetintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/clflushoptintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/clwbintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/clzerointrin.h
-%exclude /usr/lib64/clang/6.0.1/include/cpuid.h
-%exclude /usr/lib64/clang/6.0.1/include/emmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/f16cintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/float.h
-%exclude /usr/lib64/clang/6.0.1/include/fma4intrin.h
-%exclude /usr/lib64/clang/6.0.1/include/fmaintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/fxsrintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/gfniintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/htmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/htmxlintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/ia32intrin.h
-%exclude /usr/lib64/clang/6.0.1/include/immintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/intrin.h
-%exclude /usr/lib64/clang/6.0.1/include/inttypes.h
-%exclude /usr/lib64/clang/6.0.1/include/iso646.h
-%exclude /usr/lib64/clang/6.0.1/include/limits.h
-%exclude /usr/lib64/clang/6.0.1/include/lwpintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/lzcntintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/mm3dnow.h
-%exclude /usr/lib64/clang/6.0.1/include/mm_malloc.h
-%exclude /usr/lib64/clang/6.0.1/include/mmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/msa.h
-%exclude /usr/lib64/clang/6.0.1/include/mwaitxintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/nmmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/omp.h
-%exclude /usr/lib64/clang/6.0.1/include/ompt.h
-%exclude /usr/lib64/clang/6.0.1/include/opencl-c.h
-%exclude /usr/lib64/clang/6.0.1/include/pkuintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/pmmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/popcntintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/prfchwintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/rdseedintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/rtmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/s390intrin.h
-%exclude /usr/lib64/clang/6.0.1/include/shaintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/smmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/stdalign.h
-%exclude /usr/lib64/clang/6.0.1/include/stdarg.h
-%exclude /usr/lib64/clang/6.0.1/include/stdatomic.h
-%exclude /usr/lib64/clang/6.0.1/include/stdbool.h
-%exclude /usr/lib64/clang/6.0.1/include/stddef.h
-%exclude /usr/lib64/clang/6.0.1/include/stdint.h
-%exclude /usr/lib64/clang/6.0.1/include/stdnoreturn.h
-%exclude /usr/lib64/clang/6.0.1/include/tbmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/tgmath.h
-%exclude /usr/lib64/clang/6.0.1/include/tmmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/unwind.h
-%exclude /usr/lib64/clang/6.0.1/include/vadefs.h
-%exclude /usr/lib64/clang/6.0.1/include/vaesintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/varargs.h
-%exclude /usr/lib64/clang/6.0.1/include/vecintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/vpclmulqdqintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/wmmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/x86intrin.h
-%exclude /usr/lib64/clang/6.0.1/include/xmmintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/xopintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/xsavecintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/xsaveintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/xsaveoptintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/xsavesintrin.h
-%exclude /usr/lib64/clang/6.0.1/include/xtestintrin.h
 %exclude /usr/lib64/cmake/clang/ClangConfig.cmake
 %exclude /usr/lib64/cmake/clang/ClangTargets-relwithdebinfo.cmake
 %exclude /usr/lib64/cmake/clang/ClangTargets.cmake
@@ -2242,12 +2106,9 @@ popd
 %exclude /usr/lib64/libclangAST.so
 %exclude /usr/lib64/libclangASTMatchers.so
 %exclude /usr/lib64/libclangAnalysis.so
-%exclude /usr/lib64/libclangApplyReplacements.so
 %exclude /usr/lib64/libclangBasic.so
-%exclude /usr/lib64/libclangChangeNamespace.so
 %exclude /usr/lib64/libclangCodeGen.so
 %exclude /usr/lib64/libclangCrossTU.so
-%exclude /usr/lib64/libclangDaemon.so
 %exclude /usr/lib64/libclangDriver.so
 %exclude /usr/lib64/libclangDynamicASTMatchers.so
 %exclude /usr/lib64/libclangEdit.so
@@ -2255,14 +2116,9 @@ popd
 %exclude /usr/lib64/libclangFrontend.so
 %exclude /usr/lib64/libclangFrontendTool.so
 %exclude /usr/lib64/libclangHandleCXX.so
-%exclude /usr/lib64/libclangIncludeFixer.so
-%exclude /usr/lib64/libclangIncludeFixerPlugin.so
 %exclude /usr/lib64/libclangIndex.so
 %exclude /usr/lib64/libclangLex.so
-%exclude /usr/lib64/libclangMove.so
 %exclude /usr/lib64/libclangParse.so
-%exclude /usr/lib64/libclangQuery.so
-%exclude /usr/lib64/libclangReorderFields.so
 %exclude /usr/lib64/libclangRewrite.so
 %exclude /usr/lib64/libclangRewriteFrontend.so
 %exclude /usr/lib64/libclangSema.so
@@ -2270,29 +2126,10 @@ popd
 %exclude /usr/lib64/libclangStaticAnalyzerCheckers.so
 %exclude /usr/lib64/libclangStaticAnalyzerCore.so
 %exclude /usr/lib64/libclangStaticAnalyzerFrontend.so
-%exclude /usr/lib64/libclangTidy.so
-%exclude /usr/lib64/libclangTidyAndroidModule.so
-%exclude /usr/lib64/libclangTidyBoostModule.so
-%exclude /usr/lib64/libclangTidyBugproneModule.so
-%exclude /usr/lib64/libclangTidyCERTModule.so
-%exclude /usr/lib64/libclangTidyCppCoreGuidelinesModule.so
-%exclude /usr/lib64/libclangTidyFuchsiaModule.so
-%exclude /usr/lib64/libclangTidyGoogleModule.so
-%exclude /usr/lib64/libclangTidyHICPPModule.so
-%exclude /usr/lib64/libclangTidyLLVMModule.so
-%exclude /usr/lib64/libclangTidyMPIModule.so
-%exclude /usr/lib64/libclangTidyMiscModule.so
-%exclude /usr/lib64/libclangTidyModernizeModule.so
-%exclude /usr/lib64/libclangTidyObjCModule.so
-%exclude /usr/lib64/libclangTidyPerformanceModule.so
-%exclude /usr/lib64/libclangTidyPlugin.so
-%exclude /usr/lib64/libclangTidyReadabilityModule.so
-%exclude /usr/lib64/libclangTidyUtils.so
 %exclude /usr/lib64/libclangTooling.so
 %exclude /usr/lib64/libclangToolingASTDiff.so
 %exclude /usr/lib64/libclangToolingCore.so
 %exclude /usr/lib64/libclangToolingRefactor.so
-%exclude /usr/lib64/libfindAllSymbols.so
 %exclude /usr/lib64/libgomp.so
 %exclude /usr/lib64/libiomp5.so
 %exclude /usr/lib64/liblldCOFF.so
@@ -2308,6 +2145,113 @@ popd
 %exclude /usr/lib64/libomp.so
 %exclude /usr/lib64/libomptarget.rtl.x86_64.so
 %exclude /usr/lib64/libomptarget.so
+/usr/lib64/clang/6.0.1/include/__clang_cuda_builtin_vars.h
+/usr/lib64/clang/6.0.1/include/__clang_cuda_cmath.h
+/usr/lib64/clang/6.0.1/include/__clang_cuda_complex_builtins.h
+/usr/lib64/clang/6.0.1/include/__clang_cuda_intrinsics.h
+/usr/lib64/clang/6.0.1/include/__clang_cuda_math_forward_declares.h
+/usr/lib64/clang/6.0.1/include/__clang_cuda_runtime_wrapper.h
+/usr/lib64/clang/6.0.1/include/__stddef_max_align_t.h
+/usr/lib64/clang/6.0.1/include/__wmmintrin_aes.h
+/usr/lib64/clang/6.0.1/include/__wmmintrin_pclmul.h
+/usr/lib64/clang/6.0.1/include/adxintrin.h
+/usr/lib64/clang/6.0.1/include/altivec.h
+/usr/lib64/clang/6.0.1/include/ammintrin.h
+/usr/lib64/clang/6.0.1/include/arm64intr.h
+/usr/lib64/clang/6.0.1/include/arm_acle.h
+/usr/lib64/clang/6.0.1/include/arm_neon.h
+/usr/lib64/clang/6.0.1/include/armintr.h
+/usr/lib64/clang/6.0.1/include/avx2intrin.h
+/usr/lib64/clang/6.0.1/include/avx512bitalgintrin.h
+/usr/lib64/clang/6.0.1/include/avx512bwintrin.h
+/usr/lib64/clang/6.0.1/include/avx512cdintrin.h
+/usr/lib64/clang/6.0.1/include/avx512dqintrin.h
+/usr/lib64/clang/6.0.1/include/avx512erintrin.h
+/usr/lib64/clang/6.0.1/include/avx512fintrin.h
+/usr/lib64/clang/6.0.1/include/avx512ifmaintrin.h
+/usr/lib64/clang/6.0.1/include/avx512ifmavlintrin.h
+/usr/lib64/clang/6.0.1/include/avx512pfintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vbmi2intrin.h
+/usr/lib64/clang/6.0.1/include/avx512vbmiintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vbmivlintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vlbitalgintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vlbwintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vlcdintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vldqintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vlintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vlvbmi2intrin.h
+/usr/lib64/clang/6.0.1/include/avx512vlvnniintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vnniintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vpopcntdqintrin.h
+/usr/lib64/clang/6.0.1/include/avx512vpopcntdqvlintrin.h
+/usr/lib64/clang/6.0.1/include/avxintrin.h
+/usr/lib64/clang/6.0.1/include/bmi2intrin.h
+/usr/lib64/clang/6.0.1/include/bmiintrin.h
+/usr/lib64/clang/6.0.1/include/cetintrin.h
+/usr/lib64/clang/6.0.1/include/clflushoptintrin.h
+/usr/lib64/clang/6.0.1/include/clwbintrin.h
+/usr/lib64/clang/6.0.1/include/clzerointrin.h
+/usr/lib64/clang/6.0.1/include/cpuid.h
+/usr/lib64/clang/6.0.1/include/emmintrin.h
+/usr/lib64/clang/6.0.1/include/f16cintrin.h
+/usr/lib64/clang/6.0.1/include/float.h
+/usr/lib64/clang/6.0.1/include/fma4intrin.h
+/usr/lib64/clang/6.0.1/include/fmaintrin.h
+/usr/lib64/clang/6.0.1/include/fxsrintrin.h
+/usr/lib64/clang/6.0.1/include/gfniintrin.h
+/usr/lib64/clang/6.0.1/include/htmintrin.h
+/usr/lib64/clang/6.0.1/include/htmxlintrin.h
+/usr/lib64/clang/6.0.1/include/ia32intrin.h
+/usr/lib64/clang/6.0.1/include/immintrin.h
+/usr/lib64/clang/6.0.1/include/intrin.h
+/usr/lib64/clang/6.0.1/include/inttypes.h
+/usr/lib64/clang/6.0.1/include/iso646.h
+/usr/lib64/clang/6.0.1/include/limits.h
+/usr/lib64/clang/6.0.1/include/lwpintrin.h
+/usr/lib64/clang/6.0.1/include/lzcntintrin.h
+/usr/lib64/clang/6.0.1/include/mm3dnow.h
+/usr/lib64/clang/6.0.1/include/mm_malloc.h
+/usr/lib64/clang/6.0.1/include/mmintrin.h
+/usr/lib64/clang/6.0.1/include/msa.h
+/usr/lib64/clang/6.0.1/include/mwaitxintrin.h
+/usr/lib64/clang/6.0.1/include/nmmintrin.h
+/usr/lib64/clang/6.0.1/include/omp.h
+/usr/lib64/clang/6.0.1/include/ompt.h
+/usr/lib64/clang/6.0.1/include/opencl-c.h
+/usr/lib64/clang/6.0.1/include/pkuintrin.h
+/usr/lib64/clang/6.0.1/include/pmmintrin.h
+/usr/lib64/clang/6.0.1/include/popcntintrin.h
+/usr/lib64/clang/6.0.1/include/prfchwintrin.h
+/usr/lib64/clang/6.0.1/include/rdseedintrin.h
+/usr/lib64/clang/6.0.1/include/rtmintrin.h
+/usr/lib64/clang/6.0.1/include/s390intrin.h
+/usr/lib64/clang/6.0.1/include/shaintrin.h
+/usr/lib64/clang/6.0.1/include/smmintrin.h
+/usr/lib64/clang/6.0.1/include/stdalign.h
+/usr/lib64/clang/6.0.1/include/stdarg.h
+/usr/lib64/clang/6.0.1/include/stdatomic.h
+/usr/lib64/clang/6.0.1/include/stdbool.h
+/usr/lib64/clang/6.0.1/include/stddef.h
+/usr/lib64/clang/6.0.1/include/stdint.h
+/usr/lib64/clang/6.0.1/include/stdnoreturn.h
+/usr/lib64/clang/6.0.1/include/tbmintrin.h
+/usr/lib64/clang/6.0.1/include/tgmath.h
+/usr/lib64/clang/6.0.1/include/tmmintrin.h
+/usr/lib64/clang/6.0.1/include/unwind.h
+/usr/lib64/clang/6.0.1/include/vadefs.h
+/usr/lib64/clang/6.0.1/include/vaesintrin.h
+/usr/lib64/clang/6.0.1/include/varargs.h
+/usr/lib64/clang/6.0.1/include/vecintrin.h
+/usr/lib64/clang/6.0.1/include/vpclmulqdqintrin.h
+/usr/lib64/clang/6.0.1/include/wmmintrin.h
+/usr/lib64/clang/6.0.1/include/x86intrin.h
+/usr/lib64/clang/6.0.1/include/xmmintrin.h
+/usr/lib64/clang/6.0.1/include/xopintrin.h
+/usr/lib64/clang/6.0.1/include/xsavecintrin.h
+/usr/lib64/clang/6.0.1/include/xsaveintrin.h
+/usr/lib64/clang/6.0.1/include/xsaveoptintrin.h
+/usr/lib64/clang/6.0.1/include/xsavesintrin.h
+/usr/lib64/clang/6.0.1/include/xtestintrin.h
 
 %files lib
 %defattr(-,root,root,-)
@@ -2473,18 +2417,12 @@ popd
 /usr/lib64/libclangASTMatchers.so.6.0.1
 /usr/lib64/libclangAnalysis.so.6
 /usr/lib64/libclangAnalysis.so.6.0.1
-/usr/lib64/libclangApplyReplacements.so.6
-/usr/lib64/libclangApplyReplacements.so.6.0.1
 /usr/lib64/libclangBasic.so.6
 /usr/lib64/libclangBasic.so.6.0.1
-/usr/lib64/libclangChangeNamespace.so.6
-/usr/lib64/libclangChangeNamespace.so.6.0.1
 /usr/lib64/libclangCodeGen.so.6
 /usr/lib64/libclangCodeGen.so.6.0.1
 /usr/lib64/libclangCrossTU.so.6
 /usr/lib64/libclangCrossTU.so.6.0.1
-/usr/lib64/libclangDaemon.so.6
-/usr/lib64/libclangDaemon.so.6.0.1
 /usr/lib64/libclangDriver.so.6
 /usr/lib64/libclangDriver.so.6.0.1
 /usr/lib64/libclangDynamicASTMatchers.so.6
@@ -2499,22 +2437,12 @@ popd
 /usr/lib64/libclangFrontendTool.so.6.0.1
 /usr/lib64/libclangHandleCXX.so.6
 /usr/lib64/libclangHandleCXX.so.6.0.1
-/usr/lib64/libclangIncludeFixer.so.6
-/usr/lib64/libclangIncludeFixer.so.6.0.1
-/usr/lib64/libclangIncludeFixerPlugin.so.6
-/usr/lib64/libclangIncludeFixerPlugin.so.6.0.1
 /usr/lib64/libclangIndex.so.6
 /usr/lib64/libclangIndex.so.6.0.1
 /usr/lib64/libclangLex.so.6
 /usr/lib64/libclangLex.so.6.0.1
-/usr/lib64/libclangMove.so.6
-/usr/lib64/libclangMove.so.6.0.1
 /usr/lib64/libclangParse.so.6
 /usr/lib64/libclangParse.so.6.0.1
-/usr/lib64/libclangQuery.so.6
-/usr/lib64/libclangQuery.so.6.0.1
-/usr/lib64/libclangReorderFields.so.6
-/usr/lib64/libclangReorderFields.so.6.0.1
 /usr/lib64/libclangRewrite.so.6
 /usr/lib64/libclangRewrite.so.6.0.1
 /usr/lib64/libclangRewriteFrontend.so.6
@@ -2529,42 +2457,6 @@ popd
 /usr/lib64/libclangStaticAnalyzerCore.so.6.0.1
 /usr/lib64/libclangStaticAnalyzerFrontend.so.6
 /usr/lib64/libclangStaticAnalyzerFrontend.so.6.0.1
-/usr/lib64/libclangTidy.so.6
-/usr/lib64/libclangTidy.so.6.0.1
-/usr/lib64/libclangTidyAndroidModule.so.6
-/usr/lib64/libclangTidyAndroidModule.so.6.0.1
-/usr/lib64/libclangTidyBoostModule.so.6
-/usr/lib64/libclangTidyBoostModule.so.6.0.1
-/usr/lib64/libclangTidyBugproneModule.so.6
-/usr/lib64/libclangTidyBugproneModule.so.6.0.1
-/usr/lib64/libclangTidyCERTModule.so.6
-/usr/lib64/libclangTidyCERTModule.so.6.0.1
-/usr/lib64/libclangTidyCppCoreGuidelinesModule.so.6
-/usr/lib64/libclangTidyCppCoreGuidelinesModule.so.6.0.1
-/usr/lib64/libclangTidyFuchsiaModule.so.6
-/usr/lib64/libclangTidyFuchsiaModule.so.6.0.1
-/usr/lib64/libclangTidyGoogleModule.so.6
-/usr/lib64/libclangTidyGoogleModule.so.6.0.1
-/usr/lib64/libclangTidyHICPPModule.so.6
-/usr/lib64/libclangTidyHICPPModule.so.6.0.1
-/usr/lib64/libclangTidyLLVMModule.so.6
-/usr/lib64/libclangTidyLLVMModule.so.6.0.1
-/usr/lib64/libclangTidyMPIModule.so.6
-/usr/lib64/libclangTidyMPIModule.so.6.0.1
-/usr/lib64/libclangTidyMiscModule.so.6
-/usr/lib64/libclangTidyMiscModule.so.6.0.1
-/usr/lib64/libclangTidyModernizeModule.so.6
-/usr/lib64/libclangTidyModernizeModule.so.6.0.1
-/usr/lib64/libclangTidyObjCModule.so.6
-/usr/lib64/libclangTidyObjCModule.so.6.0.1
-/usr/lib64/libclangTidyPerformanceModule.so.6
-/usr/lib64/libclangTidyPerformanceModule.so.6.0.1
-/usr/lib64/libclangTidyPlugin.so.6
-/usr/lib64/libclangTidyPlugin.so.6.0.1
-/usr/lib64/libclangTidyReadabilityModule.so.6
-/usr/lib64/libclangTidyReadabilityModule.so.6.0.1
-/usr/lib64/libclangTidyUtils.so.6
-/usr/lib64/libclangTidyUtils.so.6.0.1
 /usr/lib64/libclangTooling.so.6
 /usr/lib64/libclangTooling.so.6.0.1
 /usr/lib64/libclangToolingASTDiff.so.6
@@ -2573,8 +2465,6 @@ popd
 /usr/lib64/libclangToolingCore.so.6.0.1
 /usr/lib64/libclangToolingRefactor.so.6
 /usr/lib64/libclangToolingRefactor.so.6.0.1
-/usr/lib64/libfindAllSymbols.so.6
-/usr/lib64/libfindAllSymbols.so.6.0.1
 /usr/lib64/liblldCOFF.so.6
 /usr/lib64/liblldCOFF.so.6.0.1
 /usr/lib64/liblldCommon.so.6
@@ -2597,17 +2487,12 @@ popd
 /usr/lib64/liblldYAML.so.6.0.1
 
 %files license
-%defattr(-,root,root,-)
+%defattr(0644,root,root,0755)
 %exclude /usr/share/doc/compat-llvm-soname6/LICENSE.TXT
 %exclude /usr/share/doc/compat-llvm-soname6/projects_openmp_LICENSE.txt
 %exclude /usr/share/doc/compat-llvm-soname6/test_YAMLParser_LICENSE.txt
 %exclude /usr/share/doc/compat-llvm-soname6/tools_clang_LICENSE.TXT
 %exclude /usr/share/doc/compat-llvm-soname6/tools_clang_tools_clang-format-vs_ClangFormat_license.txt
-%exclude /usr/share/doc/compat-llvm-soname6/tools_extra_LICENSE.TXT
-%exclude /usr/share/doc/compat-llvm-soname6/tools_extra_clang-tidy-vs_ClangTidy_license.txt
-%exclude /usr/share/doc/compat-llvm-soname6/tools_extra_clang-tidy_cert_LICENSE.TXT
-%exclude /usr/share/doc/compat-llvm-soname6/tools_extra_clang-tidy_hicpp_LICENSE.TXT
-%exclude /usr/share/doc/compat-llvm-soname6/tools_extra_clangd_clients_clangd-vscode_LICENSE
 %exclude /usr/share/doc/compat-llvm-soname6/tools_lld_LICENSE.TXT
 %exclude /usr/share/doc/compat-llvm-soname6/utils_unittest_googlemock_LICENSE.txt
 %exclude /usr/share/doc/compat-llvm-soname6/utils_unittest_googletest_LICENSE.TXT
